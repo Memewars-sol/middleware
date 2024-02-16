@@ -18,12 +18,7 @@ const connection = new Connection(endpoint);
 
 const account = getAdminAccount();
 const metaplex = Metaplex.make(connection)
-    .use(keypairIdentity(account))
-    .use(irysStorage({
-        address: 'https://devnet.irys.xyz',
-        providerUrl: endpoint,
-        timeout: 60000,
-    }));
+    .use(keypairIdentity(account));
 
 /**
  * 
@@ -43,8 +38,8 @@ export const initializeToken = async({name, symbol, uri, decimals}: TokenMetadat
     const tokenAccount = loadOrGenerateKeypair(name);
     const transactionId = await sendSOLTo(true, tokenAccount.publicKey.toBase58(), 0.5);
     console.log(`View SEND SOL Transaction: https://explorer.solana.com/tx/${transactionId}?cluster=devnet`);
-    console.log('waiting 15s');
-    await sleep(15000);
+    console.log('waiting 13s');
+    await sleep(13000);
     const mint = generateSigner(umi);
 
     const tokenUmi = umi.eddsa.createKeypairFromSecretKey(tokenAccount.secretKey);
@@ -84,8 +79,8 @@ export const mintTo = async(destinationWallet: PublicKey, name: string, amount: 
     
     const transactionId = await sendSOLTo(true, tokenAccount.publicKey.toBase58(), 0.03);
     console.log(`View SEND SOL (mint) Transaction: https://explorer.solana.com/tx/${transactionId}?cluster=devnet`);
-    console.log('sleep 15s');
-    await sleep(15000);
+    console.log('sleep 13s');
+    await sleep(13000);
     const mint = generateSigner(umi);
 
     const tokenUmi = umi.eddsa.createKeypairFromSecretKey(tokenAccount.secretKey);
@@ -105,9 +100,6 @@ export const mintTo = async(destinationWallet: PublicKey, name: string, amount: 
       let signature = base58.deserialize(res.signature);
       await sleep(15000);
       let transaction = await umi.rpc.getTransaction(res.signature);
-      console.log(transaction?.signatures);
-      console.log(transaction?.message);
-      console.log(transaction?.meta);
       console.log(`Completed Mint: ${amount} ` + name);
       console.log(`Transaction ID: `, signature[0]);
       console.log(`View Transaction: https://explorer.solana.com/tx/${signature[0]}?cluster=devnet`);
