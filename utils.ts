@@ -9,9 +9,9 @@ import dayjs, { OpUnitType } from 'dayjs';
 import _ from 'lodash';
 import { loadOrGenerateKeypair, loadPublicKeysFromFile } from './src/Helpers';
 import { v4 as uuidv4 } from 'uuid'; 
-import { WrapperConnection } from './src/ReadAPI';
+// import { WrapperConnection } from './src/ReadAPI';
 import { base58, base64 } from 'ethers/lib/utils';
-import { createTransferCompressedNftInstruction } from './src/NFT/Transfer';
+// import { createTransferCompressedNftInstruction } from './src/NFT/Transfer';
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
 import axios from 'axios';
@@ -155,11 +155,11 @@ export const getRPCEndpoint = (): string => {
     return process.env.RPC_URL? process.env.RPC_URL : clusterApiUrl("devnet");
 }
 
-export const _getAdminAccount = () => {
+export const getAdminAccount = () => {
     return Keypair.fromSecretKey(base58.decode(process.env.SECRET_KEY!));
 }
 
-export const getAdminAccount = (): Keypair => {
+export const _getAdminAccount = (): Keypair => {
     return loadOrGenerateKeypair("_admin");
 }
 
@@ -484,13 +484,13 @@ export const getNonPublicKeyPlayerAccount = (account: string) => {
 export const getPlayerPublicKey = (isPublicKey: boolean, account: string) => {
     return isPublicKey? new PublicKey(account) : loadOrGenerateKeypair(account, '.user_keys').publicKey;
 }
-
+/* 
 export const getAddressNftDetails = async(isPublicKey: boolean, account: string) => {
     // load the env variables and store the cluster RPC url
     const CLUSTER_URL = getRPCEndpoint();
 
     // create a new rpc connection, using the ReadApi wrapper
-    const connection = new WrapperConnection(CLUSTER_URL, "confirmed");
+    const connection = new Connection(CLUSTER_URL, "confirmed");
     let publicKey = getPlayerPublicKey(isPublicKey, account);
     const result = await connection.getAssetsByOwner({ ownerAddress: publicKey.toBase58() });
 
@@ -498,13 +498,13 @@ export const getAddressNftDetails = async(isPublicKey: boolean, account: string)
 
     return result;
 }
-
+ */
 export const getAddressSOLBalance = async(publicKey: PublicKey) => {
     // load the env variables and store the cluster RPC url
     const CLUSTER_URL = getRPCEndpoint();
 
     // create a new rpc connection, using the ReadApi wrapper
-    const connection = new WrapperConnection(CLUSTER_URL, "confirmed");
+    const connection = new Connection(CLUSTER_URL, "confirmed");
 
     const result = await connection.getBalance(publicKey);
     return result / 1000000000;
@@ -515,7 +515,7 @@ export const sendSOLTo = async(isPublicKey: boolean, account: string, amount: nu
     const CLUSTER_URL = getRPCEndpoint();
 
     // create a new rpc connection, using the ReadApi wrapper
-    const connection = new WrapperConnection(CLUSTER_URL, "confirmed");
+    const connection = new Connection(CLUSTER_URL, "confirmed");
     let publicKey = getPlayerPublicKey(isPublicKey, account);
 
     let lamports = Math.round(amount * 1000000000);
@@ -540,7 +540,7 @@ export const sendTokensTo = async(sendTo: string, token: string, tokenDecimals: 
     const CLUSTER_URL = getRPCEndpoint();
 
     // create a new rpc connection, using the ReadApi wrapper
-    const connection = new WrapperConnection(CLUSTER_URL, "confirmed");
+    const connection = new Connection(CLUSTER_URL, "confirmed");
     let currentKeypair = keypair ?? getAdminAccount();
 
     const mintToken = new PublicKey(token);
@@ -619,7 +619,7 @@ export const clawbackSOLFrom = async(keypair: Keypair) => {
     const CLUSTER_URL = getRPCEndpoint();
 
     // create a new rpc connection, using the ReadApi wrapper
-    const connection = new WrapperConnection(CLUSTER_URL, "confirmed");
+    const connection = new Connection(CLUSTER_URL, "confirmed");
 
     let solBalance = await getAddressSOLBalance(keypair.publicKey);
 
@@ -628,7 +628,6 @@ export const clawbackSOLFrom = async(keypair: Keypair) => {
     let clawbackBalance = solBalance - 0.001;
 
     if(clawbackBalance <= 0) {
-        await db.log('utils', 'clawbackSolFrom', `Balance too low to clawback`);
         return "";
     }
 
@@ -646,18 +645,17 @@ export const clawbackSOLFrom = async(keypair: Keypair) => {
     // Note: feePayer is by default the first signer, or payer, if the parameter is not set
 
     let txSignature = await connection.sendTransaction(transaction, [keypair]);
-
-    await db.log('utils', 'clawbackSolFrom', `${clawbackBalance} SOL, tx: ${txSignature}`);
+    console.log('utils', 'clawbackSolFrom', `${clawbackBalance} SOL, tx: ${txSignature}`);
     return txSignature;
 }
-
+/* 
 export const transferCNfts = async(nft_ids: string[], nonPublicKeyAccount: string, to: string) => {
     if(nft_ids.length === 0){
         return true;
     }
 
     const endpoint = getRPCEndpoint(); //Replace with your RPC Endpoint
-    const connection = new WrapperConnection(endpoint);
+    const connection = new Connection(endpoint);
 
     let nonPublicKeyAccountKeypair = getNonPublicKeyPlayerAccount(nonPublicKeyAccount);
 
@@ -687,34 +685,9 @@ export const transferCNfts = async(nft_ids: string[], nonPublicKeyAccount: strin
         throw Error ("Unable to send cNFT");
     }
 
-    /* let res = await axios.post(
-        "https://api.shyft.to/sol/v1/nft/compressed/transfer_many", 
-        {
-          "network": "mainnet-beta",
-          "nft_addresses": nft_ids,
-          "from_address": nonPublicKeyAccountKeypair.publicKey.toBase58(),
-          "to_address": to,
-        }, 
-        { 
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": "ZsCmQGJe2iK77mzH"
-          },
-        }
-    ); */
-
-    /* for(const encoded_transaction of res.data.result.encoded_transactions) {
-        console.log(encoded_transaction);
-        let recoveredTransaction = Transaction.from(Buffer.from(encoded_transaction, 'base64'));
-        recoveredTransaction.feePayer = nonPublicKeyAccountKeypair.publicKey;
-        recoveredTransaction.partialSign(nonPublicKeyAccountKeypair);
-        const txnSignature = await connection.sendRawTransaction(recoveredTransaction.serialize());
-        console.log(`Transfer cNFT signature: ${txnSignature}`);
-    } */
-
     return true;
 }
-
+ */
 export const getTransactions = async(address: string, numTx: number) => {
     // load the env variables and store the cluster RPC url
     const CLUSTER_URL = getRPCEndpoint();
@@ -729,9 +702,9 @@ export const getTransactions = async(address: string, numTx: number) => {
 
 export const getTx = async(txHash: string) => {
     const endpoint = getRPCEndpoint(); //Replace with your RPC Endpoint
-    const connection = new WrapperConnection(endpoint);
+    const connection = new Connection(endpoint);
 
-    let tx = await connection.getTransaction(txHash, { maxSupportedTransactionVersion: 0 });
+    let tx = await connection.getParsedTransaction(txHash, { maxSupportedTransactionVersion: 0 });
     return tx;
 }
 

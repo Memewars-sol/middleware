@@ -1,12 +1,17 @@
-import { Transaction, SystemProgram, Keypair, Connection, PublicKey, sendAndConfirmTransaction } from "@solana/web3.js";
+import { Transaction, SystemProgram, Keypair, Connection, PublicKey, sendAndConfirmTransaction, ParsedInstruction } from "@solana/web3.js";
 import { MINT_SIZE, TOKEN_PROGRAM_ID, createInitializeMintInstruction, getMinimumBalanceForRentExemptMint, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createMintToInstruction, createTransferInstruction } from '@solana/spl-token';
-import { DataV2, createCreateMetadataAccountV3Instruction } from '@metaplex-foundation/mpl-token-metadata';
-import { bundlrStorage, keypairIdentity, Metaplex, UploadMetadataInput } from '@metaplex-foundation/js';
-import { getAdminAccount, getDappDomain, getNonPublicKeyPlayerAccount, getPlayerPublicKey, getRPCEndpoint, getTokenAccounts } from "../../utils";
-import { loadOrGenerateKeypair } from "../Helpers";
+import { DataV2, TokenStandard, createV1, mintV1, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
+import { irysStorage, keypairIdentity, Metaplex, UploadMetadataInput } from '@metaplex-foundation/js';
+import { getAdminAccount, getDappDomain, getNonPublicKeyPlayerAccount, getPlayerPublicKey, getRPCEndpoint, getTokenAccounts, getTx, sendSOLTo, sleep } from "../../utils";
+import { getKeypairMintAddress, loadOrGenerateKeypair } from "../Helpers";
 import fetch from 'node-fetch';
 import DB from "../DB";
 import { USDC_ADDRESS } from "../Constants";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { createSignerFromKeypair, generateSigner, percentAmount, signerIdentity } from "@metaplex-foundation/umi";
+import { publicKey as convertToUmiPublicKey } from "@metaplex-foundation/umi-public-keys";
+import { TokenMetadata } from "./types";
+import { base58 } from "@metaplex-foundation/umi/serializers";
 
 const endpoint = getRPCEndpoint(); //Replace with your RPC Endpoint
 const connection = new Connection(endpoint);
@@ -14,8 +19,8 @@ const connection = new Connection(endpoint);
 const account = getAdminAccount();
 const metaplex = Metaplex.make(connection)
     .use(keypairIdentity(account))
-    .use(bundlrStorage({
-        address: 'https://devnet.bundlr.network',
+    .use(irysStorage({
+        address: 'https://devnet.irys.xyz',
         providerUrl: endpoint,
         timeout: 60000,
     }));
@@ -33,179 +38,81 @@ const uploadMetadata = async (tokenMetadata: UploadMetadataInput): Promise<strin
     return uri;
 }
 
-const createNewMintTransaction = async ({
-    name,
-    symbol,
-    description,
-    decimals,
-    imageUrl, // logo
-}: {
-    name: string;
-    symbol: string;
-    description: string;
-    decimals: number;
-    imageUrl: string;
-}) => {
-    const payer = getAdminAccount();
-    const mintKeypair = loadOrGenerateKeypair(name);
+export const initializeToken = async({name, symbol, uri, decimals}: TokenMetadata) => {
+    const umi = createUmi(getRPCEndpoint());
+    const tokenAccount = loadOrGenerateKeypair(name);
+    const transactionId = await sendSOLTo(true, tokenAccount.publicKey.toBase58(), 0.5);
+    console.log(`View SEND SOL Transaction: https://explorer.solana.com/tx/${transactionId}?cluster=devnet`);
+    console.log('waiting 15s');
+    await sleep(15000);
+    const mint = generateSigner(umi);
 
-    //Get the minimum lamport balance to create a new account and avoid rent payments
-    const requiredBalance = await getMinimumBalanceForRentExemptMint(connection);
-    //metadata account associated with mint
-    const metadataPDA = await metaplex.nfts().pdas().metadata({ mint: mintKeypair.publicKey });
-    //get associated token account of your wallet
+    const tokenUmi = umi.eddsa.createKeypairFromSecretKey(tokenAccount.secretKey);
+    const tokenSigner = createSignerFromKeypair(umi, tokenUmi);
+    umi.use(signerIdentity(tokenSigner));
+    umi.use(mplTokenMetadata());
 
-    let MY_TOKEN_METADATA: UploadMetadataInput = {
-        name,
-        symbol,
-        description,
-        image: imageUrl,
-    }
+    let res = await createV1(umi, {
+                        mint,
+                        authority: umi.identity,
+                        name,
+                        symbol,
+                        uri,
+                        sellerFeeBasisPoints: percentAmount(0),
+                        decimals,
+                        isMutable: true,
+                        tokenStandard: TokenStandard.Fungible,
+                    })
+                    .sendAndConfirm(umi);
+    let signature = base58.deserialize(res.signature);
+    await sleep(15000);
 
-    let ON_CHAIN_METADATA = {
-        name: MY_TOKEN_METADATA.name, 
-        symbol: MY_TOKEN_METADATA.symbol,
-        uri: getDappDomain() + `/metadata/${MY_TOKEN_METADATA.symbol}.json` ,
-        sellerFeeBasisPoints: 0,
-        creators: null,
-        collection: null,
-        uses: null
-    } as DataV2;
-    
-    console.log(`---STEP 1: Uploading MetaData---`);
-    let metadataUri = await uploadMetadata(MY_TOKEN_METADATA);
-    ON_CHAIN_METADATA.uri = metadataUri;
+    let tx = await getTx(signature[0]);
+    let mintInstruction = (tx?.meta?.innerInstructions![0].instructions.filter((x) => (x as ParsedInstruction).parsed.type === "initializeMint2")[0]) as ParsedInstruction;
+    let mintAddress = mintInstruction!.parsed.info.mint;
 
-    console.log(`---STEP 2: Creating Mint Transaction---`);
-    const createNewTokenTransaction = new Transaction().add(
-        SystemProgram.createAccount({
-            fromPubkey: payer.publicKey,
-            newAccountPubkey: mintKeypair.publicKey,
-            space: MINT_SIZE,
-            lamports: requiredBalance,
-            programId: TOKEN_PROGRAM_ID,
-        }),
-        createInitializeMintInstruction(
-          mintKeypair.publicKey, //Mint Address
-          decimals, //Number of Decimals of New mint
-          payer.publicKey, //Mint Authority
-          payer.publicKey, //Freeze Authority
-          TOKEN_PROGRAM_ID),
-        createCreateMetadataAccountV3Instruction({
-            metadata: metadataPDA,
-            mint: mintKeypair.publicKey,
-            mintAuthority: payer.publicKey,
-            payer: payer.publicKey,
-            updateAuthority: payer.publicKey,
-        }, {
-            createMetadataAccountArgsV3: {
-                data: ON_CHAIN_METADATA,
-                isMutable: true,
-                collectionDetails: null
-            }
-        })
-    );
+    console.log(`Transaction ID: `, signature);
+    console.log(`View Create Transaction: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
 
-    return createNewTokenTransaction;
+    return {signature, mintAddress};
 }
 
-// generate tokens
-const createNewMintToInstruction = async (destinationWallet: PublicKey, name: string, decimals: number, amount: number)=>{
-    const mintKeypair = loadOrGenerateKeypair(name);
+export const mintTo = async(destinationWallet: PublicKey, name: string, amount: number) => {
+    const umi = createUmi(getRPCEndpoint());
+    const tokenAccount = loadOrGenerateKeypair(name);
+    const mintAddress = getKeypairMintAddress(name);
     
-    // console.log(`---STEP 1: Get Associated Address---`);
-    //get associated token account of your wallet
-    const tokenATA = await getAssociatedTokenAddress(mintKeypair.publicKey, destinationWallet);
-    const mintObject = await getUserTokens(destinationWallet);
-    let shouldCreateNewATA = !Object.keys(mintObject).includes(mintKeypair.publicKey.toBase58()); 
-    
-    // console.log({ shouldCreateNewATA });
-    // console.log(tokenATA.toBase58());
+    const transactionId = await sendSOLTo(true, tokenAccount.publicKey.toBase58(), 0.03);
+    console.log(`View SEND SOL (mint) Transaction: https://explorer.solana.com/tx/${transactionId}?cluster=devnet`);
+    console.log('sleep 15s');
+    await sleep(15000);
+    const mint = generateSigner(umi);
 
-    const mintNewTokenInstruction = new Transaction();
-    if(shouldCreateNewATA) {
-        mintNewTokenInstruction.add(
-            createAssociatedTokenAccountInstruction(
-              account.publicKey, //Payer 
-              tokenATA, //Associated token account 
-              destinationWallet, //token owner
-              mintKeypair.publicKey, //Mint
-            ),
-        );
-    }
-    mintNewTokenInstruction.add(
-        createMintToInstruction(
-          mintKeypair.publicKey, //Mint
-          tokenATA, //Destination Token Account
-          account.publicKey, //Authority
-          Math.round(amount * Math.pow(10, decimals)),//number of tokens
-        ),
-    );
+    const tokenUmi = umi.eddsa.createKeypairFromSecretKey(tokenAccount.secretKey);
+    const tokenSigner = createSignerFromKeypair(umi, tokenUmi);
+    umi.use(signerIdentity(tokenSigner));
+    umi.use(mplTokenMetadata());
 
-    return mintNewTokenInstruction;
-}
+    console.log(umi.identity.publicKey);
 
-const createNewTransferToInstruction = async (fromWallet: Keypair, destinationWallet: PublicKey, name: string, decimals: number, amount: number)=>{
-    const mintKeypair = loadOrGenerateKeypair(name);
-    
-    // console.log(`---STEP 1: Get Associated Address---`);
-    //get associated token account of your wallet
-    const fromTokenATA = await getAssociatedTokenAddress(mintKeypair.publicKey, fromWallet.publicKey);
-    const tokenATA = await getAssociatedTokenAddress(mintKeypair.publicKey, destinationWallet);
-    const mintObject = await getUserTokens(destinationWallet);
-    let shouldCreateNewATA = !Object.keys(mintObject).includes(mintKeypair.publicKey.toBase58()); 
-
-    const transferTokenInstruction = new Transaction();
-    if(shouldCreateNewATA) {
-        transferTokenInstruction.add(
-            createAssociatedTokenAccountInstruction(
-              fromWallet.publicKey, //Payer 
-              tokenATA, //Associated token account 
-              destinationWallet, //token owner
-              mintKeypair.publicKey, //Mint
-            ),
-        );
-    }
-    transferTokenInstruction.add(
-        createTransferInstruction(
-            fromTokenATA, //From Token Account
-            tokenATA, //Destination Token Account
-            fromWallet.publicKey, //Owner
-            Math.round(amount * Math.pow(10, decimals)),//number of tokens
-        ),
-    );
-
-    return transferTokenInstruction;
-}
-
-export const initializeToken = async() => {
-    let name = "any";
-    let symbol = "ANY";
-    let decimals = 6;
-    let description = "any desc";
-    const newMintTransaction:Transaction = await createNewMintTransaction({
-        name,
-        symbol,
-        description,
-        decimals,
-        imageUrl: "",
-    });
-    const mintKeypair = loadOrGenerateKeypair(name);
-    console.log(mintKeypair.publicKey.toBase58());
-
-    console.log(`---STEP 3: Executing Mint Transaction---`);
-    let { lastValidBlockHeight, blockhash } = await connection.getLatestBlockhash('finalized');
-    newMintTransaction.recentBlockhash = blockhash;
-    newMintTransaction.lastValidBlockHeight = lastValidBlockHeight;
-    newMintTransaction.feePayer = account.publicKey;
-    const transactionId = await sendAndConfirmTransaction(connection,newMintTransaction,[account,mintKeypair]); 
-    // console.log(`Transaction ID: `, transactionId);
-    // console.log(`View Transaction: https://explorer.solana.com/tx/${transactionId}?cluster=devnet`);
-    // console.log(`View Token Mint: https://explorer.solana.com/address/${mintKeypair.publicKey.toString()}?cluster=devnet`)
-}
-
-export const getTokenPublicKey = (whichToken: "gold" | "exp") => {
-    return loadOrGenerateKeypair(whichToken).publicKey.toBase58();
+    const res = await mintV1(umi, {
+        mint: convertToUmiPublicKey(mintAddress),
+        authority: umi.identity,
+        amount: 1,
+        tokenOwner: convertToUmiPublicKey(destinationWallet.toBase58()),
+        tokenStandard: TokenStandard.Fungible,
+      }).sendAndConfirm(umi);
+      let signature = base58.deserialize(res.signature);
+      await sleep(15000);
+      let transaction = await umi.rpc.getTransaction(res.signature);
+      console.log(transaction?.signatures);
+      console.log(transaction?.message);
+      console.log(transaction?.meta);
+      console.log(`Completed Mint: ${amount} ` + name);
+      console.log(`Transaction ID: `, signature[0]);
+      console.log(`View Transaction: https://explorer.solana.com/tx/${signature[0]}?cluster=devnet`);
+      console.log(`View Token Mint: https://explorer.solana.com/address/${destinationWallet.toString()}?cluster=devnet`)
+      return signature;
 }
 
 export const getAddressAssets = async(userAccount: string) => {
@@ -259,22 +166,7 @@ export const getUserTokens = async(userAccount: PublicKey) => {
     return mintObject;
 }
 
-export const mintTo = async(destinationWallet: PublicKey, name: string, decimals: number, amount: number) => {
-    const newMintTransaction:Transaction = await createNewMintToInstruction(destinationWallet, name, decimals, amount);
-    // const mintKeypair = loadOrGenerateKeypair(whichToken);
-
-    // console.log(`---STEP 2: Executing Mint Transaction---`);
-    let { lastValidBlockHeight, blockhash } = await connection.getLatestBlockhash('finalized');
-    newMintTransaction.recentBlockhash = blockhash;
-    newMintTransaction.lastValidBlockHeight = lastValidBlockHeight;
-    newMintTransaction.feePayer = account.publicKey;
-    const transactionId = await sendAndConfirmTransaction(connection,newMintTransaction,[account]); 
-    // console.log(`Completed Mint: ${amount} ` + whichToken);
-    // console.log(`Transaction ID: `, transactionId);
-    // console.log(`View Transaction: https://explorer.solana.com/tx/${transactionId}?cluster=devnet`);
-    // console.log(`View Token Mint: https://explorer.solana.com/address/${mintKeypair.publicKey.toString()}?cluster=devnet`)
-}
-
+/* 
 // account = non public key account
 export const transferTo = async(account: string, destinationWallet: PublicKey, name: string, decimals: number, amount: number) => {
     const playerKeypair = getNonPublicKeyPlayerAccount(account);
@@ -290,7 +182,7 @@ export const transferTo = async(account: string, destinationWallet: PublicKey, n
     // console.log(`View Transaction: https://explorer.solana.com/tx/${transactionId}?cluster=devnet`);
     // console.log(`View Transfer: https://explorer.solana.com/address/${mintKeypair.publicKey.toString()}?cluster=devnet`)
 }
-
+ */
 // account = non public key account
 // for migrations purposes
 /* export const transferAllTo = async(account: string, destinationWallet: PublicKey) => {
