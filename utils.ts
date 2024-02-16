@@ -628,6 +628,7 @@ export const clawbackSOLFrom = async(keypair: Keypair) => {
     let clawbackBalance = solBalance - 0.001;
 
     if(clawbackBalance <= 0) {
+        await db.log('utils', 'clawbackSolFrom', `Low balance in ${keypair.publicKey}`);
         return "";
     }
 
@@ -645,7 +646,7 @@ export const clawbackSOLFrom = async(keypair: Keypair) => {
     // Note: feePayer is by default the first signer, or payer, if the parameter is not set
 
     let txSignature = await connection.sendTransaction(transaction, [keypair]);
-    console.log('utils', 'clawbackSolFrom', `${clawbackBalance} SOL, tx: ${txSignature}`);
+    await db.log('utils', 'clawbackSolFrom', `${clawbackBalance} SOL, tx: ${txSignature}`);
     return txSignature;
 }
 /* 
