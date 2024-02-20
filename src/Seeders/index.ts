@@ -16,7 +16,11 @@ export const seedBuildings = async() => {
     let columns: string[] = [];
     let insertValues: any[][] = [];
 
-    let buildingsData = fs.readFileSync(__dirname.replace("dist/", "") + '/Assets/server_buildings.csv');
+    let isMac = __dirname.includes("/");
+    let toReplace = isMac? "dist/" : "dist\\";
+    let assetFolder = isMac? /Assets/ : '\\Assets\\';
+
+    let buildingsData = fs.readFileSync(__dirname.replace(toReplace, "") + `${assetFolder}server_buildings.csv`);
     let rows = buildingsData.toString().split("\n");
     let ignoredIndex = 0;
 
@@ -75,7 +79,11 @@ export const seedUnits = async() => {
     let columns: string[] = [];
     let insertValues: any[][] = [];
 
-    let buildingsData = fs.readFileSync(__dirname.replace("dist/", "") + '/Assets/server_units.csv');
+    let isMac = __dirname.includes("/");
+    let toReplace = isMac? "dist/" : "dist\\";
+    let assetFolder = isMac? /Assets/ : '\\Assets\\';
+
+    let buildingsData = fs.readFileSync(__dirname.replace(toReplace, "") + `${assetFolder}server_units.csv`);
     let rows = buildingsData.toString().split("\n");
     let ignoredIndex = 0;
 
@@ -134,7 +142,11 @@ export const seedSpells = async() => {
     let columns: string[] = [];
     let insertValues: any[][] = [];
 
-    let buildingsData = fs.readFileSync(__dirname.replace("dist/", "") + '/Assets/server_spells.csv');
+    let isMac = __dirname.includes("/");
+    let toReplace = isMac? "dist/" : "dist\\";
+    let assetFolder = isMac? /Assets/ : '\\Assets\\';
+
+    let buildingsData = fs.readFileSync(__dirname.replace(toReplace, "") + `${assetFolder}server_spells.csv`);
     let rows = buildingsData.toString().split("\n");
     let ignoredIndex = 0;
 
