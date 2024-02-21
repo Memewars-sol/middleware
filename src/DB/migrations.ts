@@ -417,4 +417,18 @@ export default [
             DROP TABLE logs;
         `,
     },
+
+    // migrate to use address
+    {
+        name: "add_address_to_accounts",
+        query: `
+            ALTER TABLE accounts
+            ADD COLUMN address text not null,
+            ADD CONSTRAINT constraint_accounts_address UNIQUE (address);
+        `,
+        rollback_query: `
+            ALTER TABLE accounts
+            DROP COLUMN address;
+        `,
+    },
 ];
