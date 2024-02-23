@@ -155,7 +155,6 @@ export const mintCNFTTo = async(destinationWallet: PublicKey, name: string) => {
 
 export const getCollectionCNFTs = async(name: string) => {
     const collectionAccount = loadOrGenerateKeypair(name);
-    console.log(collectionAccount.publicKey.toBase58());
 
     const response = await fetch(getRPCEndpoint(), {
         method: 'POST',
@@ -175,8 +174,8 @@ export const getCollectionCNFTs = async(name: string) => {
         }),
     });
     const { result } = await response.json();
-    console.log("Assets by Group: ");
-    console.log(result.items);
+    console.log(`Assets by Collection: ${collectionAccount.publicKey.toBase58()}`);
+    // console.log(result.items);
     result.items.forEach((item: any) => {
         if(item.compression.compressed) {
             console.log(item.content.metadata);
@@ -203,8 +202,8 @@ export const getAddressCNFTs = async(address: string) => {
         }),
     });
     const { result } = await response.json();
-    console.log("Assets by Group: ");
-    console.log(result.items);
+    console.log(`Assets by Owner: ${address}`);
+    // console.log(result.items);
     result.items.forEach((item: any) => {
         if(item.compression.compressed) {
             console.log(item.content.metadata);
