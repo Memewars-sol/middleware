@@ -185,9 +185,9 @@ export function getKeypairMintAddress(fileName: string, dirName: string = DEFAUL
 }
 
 // set mint keypair's token
-export function setKeypairMerkleMintAddress(fileName: string, mintAddress: string, dirName: string = DEFAULT_KEY_DIR_NAME) {
+export function setKeypairMerkleMintAddress(fileName: string, mintAddress: string, index: string = "", dirName: string = DEFAULT_KEY_DIR_NAME) {
   // compute the path to locate the file
-  const searchPath = path.join(dirName, `${fileName}_merkle_mint_address.json`);
+  const searchPath = path.join(dirName, `${fileName}_merkle_mint_address${index? `_${index}` : ""}.json`);
   if (fs.existsSync(searchPath)) throw Error("File exists");
   fs.writeFileSync(searchPath, mintAddress);
 }
