@@ -32,7 +32,7 @@ app.use(cors({
     credentials: true
 }));
 
-app.use((req, res, next) => {
+/* app.use((req, res, next) => {
     // we need to check the multipart in their respective paths
     if(req.is('multipart/form-data')) {
         console.log('is multipart');
@@ -52,7 +52,7 @@ app.use((req, res, next) => {
     }
 
     next();
-});
+}); */
 
 app.use('/api', apiRoutes);
 

@@ -431,4 +431,35 @@ export default [
             DROP COLUMN address;
         `,
     },
+
+    // add mint address pivot tables
+    {
+        name: "add_mint_address_to_accounts",
+        query: `
+            ALTER TABLE accounts
+            ADD COLUMN mint_address text;
+        `,
+        rollback_query: `
+            ALTER TABLE accounts
+            DROP COLUMN mint_address;
+        `,
+    },
+
+    // add mint address pivot tables
+    // {
+    //     name: "create_account_mint_addresses_table",
+    //     query: `
+    //         CREATE TABLE account_mint_addresses (
+    //             id serial PRIMARY KEY,
+    //             created_at timestamp default current_timestamp not null,
+    //             account_id text not null,
+    //             mint_address text not null
+    //         );
+    //         CREATE INDEX account_mint_addresses_created_at_idx ON account_mint_addresses(created_at);
+    //     `,
+    //     rollback_query: `
+    //         DROP INDEX account_mint_addresses_created_at_idx;
+    //         DROP TABLE account_mint_addresses;
+    //     `,
+    // },
 ];

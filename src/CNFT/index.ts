@@ -3,7 +3,7 @@ import { MINT_SIZE, TOKEN_PROGRAM_ID, createInitializeMintInstruction, getMinimu
 import { DataV2, TokenStandard, createNft, createV1, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { irysStorage, keypairIdentity, Metaplex, UploadMetadataInput } from '@metaplex-foundation/js';
 import { getAdminAccount, getDappDomain, getNonPublicKeyPlayerAccount, getPlayerPublicKey, getRPCEndpoint, getTokenAccounts, getTx, sendSOLTo, sleep } from "../../utils";
-import { getKeypairMintAddress, loadOrGenerateKeypair } from "../Helpers";
+import { getKeypairMerkleMintAddress, getKeypairMintAddress, loadOrGenerateKeypair } from "../Helpers";
 import fetch from 'node-fetch';
 import DB from "../DB";
 import { USDC_ADDRESS } from "../Constants";
@@ -11,7 +11,7 @@ import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { createSignerFromKeypair, generateSigner, none, percentAmount, signerIdentity } from "@metaplex-foundation/umi";
 import { publicKey as convertToUmiPublicKey } from "@metaplex-foundation/umi-public-keys";
 import { base58 } from "@metaplex-foundation/umi/serializers";
-import { CNFTMetadata } from "./types";
+import { CNFTMetadata, CNFTType } from "./types";
 import { mintToCollectionV1, mintV1 } from "@metaplex-foundation/mpl-bubblegum";
 import { createTree } from '@metaplex-foundation/mpl-bubblegum'
 
@@ -66,7 +66,7 @@ export const createCollection = async({name, uri}: CNFTMetadata) => {
     let mintAddress = mintInstruction!.parsed.info.mint;
 
     console.log(`Transaction ID: `, signature);
-    console.log(`View Create Collection Transaction: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
+    console.log(`View Create Collection Transaction: https://explorer.solana.com/tx/${signature[0]}?cluster=devnet`);
 
     return {signature, mintAddress};
 }
@@ -75,7 +75,7 @@ export const createCollection = async({name, uri}: CNFTMetadata) => {
 export const createMerkleTree = async(name: string) => {
 
     const umi = createUmi(getRPCEndpoint());
-    const tokenAccount = loadOrGenerateKeypair(name + "_merkle");
+    const tokenAccount = loadOrGenerateKeypair(name);
     const transactionId = await sendSOLTo(true, tokenAccount.publicKey.toBase58(), 0.5);
     console.log(`View SEND SOL Transaction: https://explorer.solana.com/tx/${transactionId}?cluster=devnet`);
     console.log('waiting 13s');
@@ -107,21 +107,20 @@ export const createMerkleTree = async(name: string) => {
     return {signature, mintAddress};
 }
 
-export const mintCNFTTo = async(destinationWallet: PublicKey, name: string) => {
-    const merkleName = name + "_merkle";
-    const collectionName = name;
+// average mint time 1.7s
+export const mintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType, metadataId: number) => {
+    console.log('minting cnft');
     const umi = createUmi(getRPCEndpoint());
-    const merkleAccount = loadOrGenerateKeypair(merkleName);
+    const merkleAccount = loadOrGenerateKeypair(type);
     const merkleUmi = umi.eddsa.createKeypairFromSecretKey(merkleAccount.secretKey);
     const merkleSigner = createSignerFromKeypair(umi, merkleUmi);
 
-    const collectionAccount = loadOrGenerateKeypair(collectionName);
+    const collectionAccount = loadOrGenerateKeypair(type);
     const collectionUmi = umi.eddsa.createKeypairFromSecretKey(collectionAccount.secretKey);
     const collectionSigner = createSignerFromKeypair(umi, collectionUmi);
 
-
-    const merkleMintAddress = getKeypairMintAddress(merkleName);
-    const collectionMintAddress = getKeypairMintAddress(collectionName);
+    const collectionMintAddress = getKeypairMintAddress(type);
+    const merkleMintAddress = getKeypairMerkleMintAddress(type);
 
     umi.use(signerIdentity(merkleSigner));
     // umi.use(signerIdentity(collectionSigner));
@@ -129,9 +128,9 @@ export const mintCNFTTo = async(destinationWallet: PublicKey, name: string) => {
 
     let res = await mintToCollectionV1(umi, {
         metadata: {
-            uri: `https://cnft${name}.com`,
-            name: "somename",
-            symbol: "TESTV3",
+            uri: getDappDomain() + `/${type}/${metadataId}.json`,
+            name: `Memewars ${type}`,
+            symbol: `M${type.substring(0, 2).toUpperCase()}`,
             sellerFeeBasisPoints: 0,
             collection: {
                 key: convertToUmiPublicKey(collectionMintAddress),
@@ -147,10 +146,34 @@ export const mintCNFTTo = async(destinationWallet: PublicKey, name: string) => {
     }).sendAndConfirm(umi);
     
     let signature = base58.deserialize(res.signature);
+
+    // cant get mint address
+    /* let tx = await getTx(signature[0]);
+    let mintInstruction = (tx?.meta?.innerInstructions![0].instructions.filter((x) => (x as ParsedInstruction).parsed.type === "initializeMint2")[0]) as ParsedInstruction;
+    let mintAddress = mintInstruction!.parsed.info.mint;
+    console.log(mintAddress); */
+
     console.log(`Transaction ID: `, signature[0]);
     console.log(`View Transaction: https://explorer.solana.com/tx/${signature[0]}?cluster=devnet`);
     console.log(`View Token Mint: https://explorer.solana.com/address/${destinationWallet.toString()}?cluster=devnet`)
     return signature;
+}
+
+export const mintAndAssignCNFTIdTo = async(address: string, type: CNFTType) => {
+    let db = new DB();
+    let query = `select id from accounts where address = '${address}'`;
+    let ret = await db.executeQueryForSingleResult<{id: number}>(query);
+    if(!ret) {
+        console.log('cant find id');
+        return;
+    }
+
+    // dont await cause we want it to run asynchronously
+    mintCNFTTo(new PublicKey(address), type, ret.id);
+    setTimeout(() => {
+        // might want to move this to a cron job that fills up missing accounts
+        assignAccountCNFTToAccount(address, type);
+    }, 30000);
 }
 
 export const getCollectionCNFTs = async(name: string) => {
@@ -174,6 +197,7 @@ export const getCollectionCNFTs = async(name: string) => {
         }),
     });
     const { result } = await response.json();
+    return result?.items ?? [];
     console.log(`Assets by Collection: ${collectionAccount.publicKey.toBase58()}`);
     // console.log(result.items);
     result.items.forEach((item: any) => {
@@ -184,6 +208,7 @@ export const getCollectionCNFTs = async(name: string) => {
     });
 }
 
+// metadata path = dapp
 export const getAddressCNFTs = async(address: string) => {
     const response = await fetch(getRPCEndpoint(), {
         method: 'POST',
@@ -202,12 +227,27 @@ export const getAddressCNFTs = async(address: string) => {
         }),
     });
     const { result } = await response.json();
+    return result?.items ?? [];
     console.log(`Assets by Owner: ${address}`);
     // console.log(result.items);
     result.items.forEach((item: any) => {
+        console.log(item);
         if(item.compression.compressed) {
             console.log(item.content.metadata);
             console.log(item.id);
         }
     });
+}
+
+export const assignAccountCNFTToAccount = async(address: string, type: CNFTType) => {
+    let db = new DB();
+    let addressCNFTs = await getAddressCNFTs(address);
+    for(const item of addressCNFTs) {
+        if((item.content.json_uri as string).startsWith(getDappDomain() + `/${type}`)) {
+            let cnftId = item.id;
+            let query = `UPDATE accounts SET mint_address = '${cnftId}' WHERE address = '${address}'`;
+            db.executeQuery(query);
+            console.log('account assigned');
+        }
+    };
 }
