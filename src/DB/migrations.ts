@@ -432,7 +432,7 @@ export default [
         `,
     },
 
-    // add mint address pivot tables
+    // add mint address to accounts
     {
         name: "add_mint_address_to_accounts",
         query: `
@@ -462,4 +462,29 @@ export default [
     //         DROP TABLE account_mint_addresses;
     //     `,
     // },
+
+    // add mint address to buildings
+    {
+        name: "add_mint_address_to_buildings",
+        query: `
+            ALTER TABLE buildings
+            ADD COLUMN mint_address text;
+        `,
+        rollback_query: `
+            ALTER TABLE buildings
+            DROP COLUMN mint_address;
+        `,
+    },
+
+    {
+        name: "add_is_in_inventory_to_buildings",
+        query: `
+            ALTER TABLE buildings
+            ADD COLUMN is_in_inventory bool not null default(false);
+        `,
+        rollback_query: `
+            ALTER TABLE buildings
+            DROP COLUMN is_in_inventory;
+        `,
+    },
 ];
