@@ -487,4 +487,16 @@ export default [
             DROP COLUMN is_in_inventory;
         `,
     },
+
+    {
+        name: "add_is_cnft_to_buildings",
+        query: `
+            ALTER TABLE buildings
+            ADD COLUMN is_cnft bool not null default(false);
+        `,
+        rollback_query: `
+            ALTER TABLE buildings
+            DROP COLUMN is_cnft;
+        `,
+    },
 ];

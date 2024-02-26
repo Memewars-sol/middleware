@@ -72,10 +72,11 @@ export const createCollection = async({name, uri}: CNFTMetadata) => {
 }
 
 // need to call when our merkle tree runs out of space
-export const createMerkleTree = async(name: string) => {
+export const createMerkleTree = async() => {
 
     const umi = createUmi(getRPCEndpoint());
-    const tokenAccount = loadOrGenerateKeypair(name);
+    // account is always the merkle tree's owner
+    const tokenAccount = loadOrGenerateKeypair("account");
     const transactionId = await sendSOLTo(true, tokenAccount.publicKey.toBase58(), 0.5);
     console.log(`View SEND SOL Transaction: https://explorer.solana.com/tx/${transactionId}?cluster=devnet`);
     console.log('waiting 13s');
@@ -111,7 +112,9 @@ export const createMerkleTree = async(name: string) => {
 export const mintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType, metadataId: number) => {
     console.log('minting cnft');
     const umi = createUmi(getRPCEndpoint());
-    const merkleAccount = loadOrGenerateKeypair(type);
+
+    // merkle account owner is always "account"
+    const merkleAccount = loadOrGenerateKeypair("account");
     const merkleUmi = umi.eddsa.createKeypairFromSecretKey(merkleAccount.secretKey);
     const merkleSigner = createSignerFromKeypair(umi, merkleUmi);
 
@@ -120,7 +123,8 @@ export const mintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType, me
     const collectionSigner = createSignerFromKeypair(umi, collectionUmi);
 
     const collectionMintAddress = getKeypairMintAddress(type);
-    const merkleMintAddress = getKeypairMerkleMintAddress(type);
+    // index = 0 at the moment
+    const merkleMintAddress = getKeypairMerkleMintAddress();
 
     umi.use(signerIdentity(merkleSigner));
     // umi.use(signerIdentity(collectionSigner));
