@@ -3,7 +3,7 @@ import { PublicKey } from "@metaplex-foundation/js";
 import { initializeToken, mintTo } from "./src/Token";
 import { clawbackSOLFrom, getDappDomain, getRPCEndpoint, getTx, sleep } from "./utils";
 import { getKeypairMintAddress, loadOrGenerateKeypair, setKeypairMerkleMintAddress, setKeypairMintAddress } from "./src/Helpers";
-import { assignAccountCNFTToAccount, createCollection, createMerkleTree, getAddressCNFTs, getCollectionCNFTs, mintAndAssignCNFTIdTo, mintCNFTTo } from "./src/CNFT";
+import { assignCNFTToAccount, createCollection, createMerkleTree, getAddressCNFTs, getCollectionCNFTs, mintAndAssignAccountCNFTIdTo, mintAndAssignBuildingCNFTIdTo, mintCNFTTo } from "./src/CNFT";
 import { ParsedInstruction } from "@solana/web3.js";
 import { CNFTType } from "./src/CNFT/types";
 
@@ -37,7 +37,8 @@ import { CNFTType } from "./src/CNFT/types";
     setKeypairMerkleMintAddress(type, merkleMintAddress);
     // await getCollectionCNFTs(type);
 
-    // await mintAndAssignCNFTIdTo("5fCJG9JoexD9JKfq4JxARVByb6hKSkiuDH1HGS1HVATd", "account")
+    // await mintAndAssignAccountCNFTIdTo("5fCJG9JoexD9JKfq4JxARVByb6hKSkiuDH1HGS1HVATd");
+    // await mintAndAssignBuildingCNFTIdTo("5fCJG9JoexD9JKfq4JxARVByb6hKSkiuDH1HGS1HVATd", 1);
 
     // let clawbackKeypair = loadOrGenerateKeypair(type);
     // await clawbackSOLFrom(clawbackKeypair);
