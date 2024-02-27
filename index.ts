@@ -32,27 +32,38 @@ app.use(cors({
     credentials: true
 }));
 
-/* app.use((req, res, next) => {
+app.use((req, res, next) => {
     // we need to check the multipart in their respective paths
-    if(req.is('multipart/form-data')) {
-        console.log('is multipart');
+    // if(req.is('multipart/form-data')) {
+    //     console.log('is multipart');
+    //     next();
+    //     return;
+    // }
+
+    // const { address, signature, message } = req.body;
+    // if(!signature || !address) {
+    //     console.log('invalid params');
+    //     return res.status(400).send('Invalid params');
+    // }
+
+    // let verified = verifySignature(address, signature, message ?? VERIFY_MESSAGE);
+    // if(!verified) {
+    //     return res.status(401).send("Unauthorized");
+    // }
+
+    // if it's get json then we dont need to check
+    if(req.path.match(/\/metadata\/(account|building)\/(.*)\.json/g) && req.method.toLowerCase() === "get") {
         next();
         return;
     }
 
-    const { address, signature, message } = req.body;
-    if(!signature || !address) {
-        console.log('invalid params');
-        return res.status(400).send('Invalid params');
-    }
-
-    let verified = verifySignature(address, signature, message ?? VERIFY_MESSAGE);
-    if(!verified) {
+    const { server_key } = req.body;
+    if(!server_key || server_key !== process.env.CS_SERVER_KEY) {
+        console.log('Unauthorized');
         return res.status(401).send("Unauthorized");
     }
-
     next();
-}); */
+});
 
 app.use('/api', apiRoutes);
 
