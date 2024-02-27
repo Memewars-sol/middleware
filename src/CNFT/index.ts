@@ -341,6 +341,7 @@ export const assignCNFTToAccount = async(address: string) => {
     let db = new DB();
     let addressCNFTs = await getAddressCNFTs(address);
     for(const item of addressCNFTs) {
+        // need to check collection too
         if((item.content.json_uri as string).startsWith(getDappDomain() + `/account`)) {
             let cnftId = item.id;
             let query = `UPDATE accounts SET mint_address = '${cnftId}' WHERE address = '${address}'`;
@@ -374,6 +375,7 @@ export const bulkAssignCNFTToBuilding = async(address: string, building_ids: num
         }
 
         try {
+            // need to check collection too
             let building_id = parseInt(uri.replace(startsWith, "").replace(".json", ""));
             if(building_ids.includes(building_id)) {
                 let cnftId = item.id;
