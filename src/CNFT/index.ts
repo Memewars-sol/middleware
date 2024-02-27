@@ -8,8 +8,8 @@ import fetch from 'node-fetch';
 import DB from "../DB";
 import { USDC_ADDRESS } from "../Constants";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { createSignerFromKeypair, generateSigner, none, percentAmount, signerIdentity } from "@metaplex-foundation/umi";
-import { publicKey as convertToUmiPublicKey } from "@metaplex-foundation/umi-public-keys";
+import { Instruction, TransactionBuilder, Umi, createSignerFromKeypair, generateSigner, none, percentAmount, signerIdentity } from "@metaplex-foundation/umi";
+import { publicKey as convertToUmiPublicKey, PublicKey as MetaplexPublicKey } from "@metaplex-foundation/umi-public-keys";
 import { base58 } from "@metaplex-foundation/umi/serializers";
 import { CNFTMetadata, CNFTType } from "./types";
 import { mintToCollectionV1, mintV1 } from "@metaplex-foundation/mpl-bubblegum";
@@ -152,15 +152,91 @@ export const mintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType, me
     let signature = base58.deserialize(res.signature);
 
     // cant get mint address
-    /* let tx = await getTx(signature[0]);
-    let mintInstruction = (tx?.meta?.innerInstructions![0].instructions.filter((x) => (x as ParsedInstruction).parsed.type === "initializeMint2")[0]) as ParsedInstruction;
-    let mintAddress = mintInstruction!.parsed.info.mint;
-    console.log(mintAddress); */
 
     console.log(`Transaction ID: `, signature[0]);
     console.log(`View Transaction: https://explorer.solana.com/tx/${signature[0]}?cluster=devnet`);
     console.log(`View Token Mint: https://explorer.solana.com/address/${destinationWallet.toString()}?cluster=devnet`)
     return signature;
+}
+
+// average mint time 1.7s
+// have to be careful to not exceed transaction size
+export const bulkMintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType, metadataIds: number[]) => {
+    console.log('minting cnft');
+    const MAX_BULK_SIZE = 1;
+    const umi = createUmi(getRPCEndpoint());
+
+    // merkle account owner is always "account"
+    const merkleAccount = loadOrGenerateKeypair("account");
+    const merkleUmi = umi.eddsa.createKeypairFromSecretKey(merkleAccount.secretKey);
+    const merkleSigner = createSignerFromKeypair(umi, merkleUmi);
+
+    const collectionAccount = loadOrGenerateKeypair(type);
+    const collectionUmi = umi.eddsa.createKeypairFromSecretKey(collectionAccount.secretKey);
+    const collectionSigner = createSignerFromKeypair(umi, collectionUmi);
+
+    const collectionMintAddress = getKeypairMintAddress(type);
+    // index = 0 at the moment
+    const merkleMintAddress = getKeypairMerkleMintAddress();
+
+    umi.use(signerIdentity(merkleSigner));
+    // umi.use(signerIdentity(collectionSigner));
+    umi.use(mplTokenMetadata());
+
+    for(const metadataId of metadataIds) {
+        let res = await mintToCollectionV1(umi, {
+            metadata: {
+                uri: getDappDomain() + `/${type}/${metadataId}.json`,
+                name: `Memewars ${type}`,
+                symbol: `M${type.substring(0, 2).toUpperCase()}`,
+                sellerFeeBasisPoints: 0,
+                collection: {
+                    key: convertToUmiPublicKey(collectionMintAddress),
+                    verified: false,
+                },
+                uses: none(),
+                creators: [],
+            },
+            leafOwner: convertToUmiPublicKey(destinationWallet.toBase58()),
+            merkleTree: convertToUmiPublicKey(merkleMintAddress),
+            collectionMint: convertToUmiPublicKey(collectionMintAddress),
+            collectionAuthority: collectionSigner
+        }).sendAndConfirm(umi);
+
+        let signature = base58.deserialize(res.signature);
+        console.log(`View Transaction: https://explorer.solana.com/tx/${signature[0]}?cluster=devnet`);
+
+        // stupid way of minting
+        await sleep(100);
+    }
+
+    console.log(`View Token Mint: https://explorer.solana.com/address/${destinationWallet.toString()}?cluster=devnet`)
+    return "";
+}
+
+// not working
+export const sendInstructionsViaUmi = async(umi: Umi, signerPublicKey: MetaplexPublicKey, instructions: Instruction[]) => {
+    let latestBlockhash = await umi.rpc.getLatestBlockhash();
+    let umiTransaction = umi.transactions.create({
+        version: 0,
+        payer: signerPublicKey,
+        instructions,
+        blockhash: latestBlockhash.blockhash,
+    });
+
+    try {
+        let res = await umi.rpc.sendTransaction(umiTransaction);
+        let signature = base58.deserialize(res);
+
+        // cant get mint address
+        console.log(`Transaction ID: `, signature[0]);
+        console.log(`View Transaction: https://explorer.solana.com/tx/${signature[0]}?cluster=devnet`);
+        return signature;
+    }
+
+    catch(e) {
+        console.log(e);
+    }
 }
 
 export const mintAndAssignAccountCNFTIdTo = async(address: string) => {
@@ -186,6 +262,15 @@ export const mintAndAssignBuildingCNFTIdTo = async(address: string, building_id:
     setTimeout(() => {
         // might want to move this to a cron job that fills up missing accounts
         assignCNFTToBuilding(address, building_id);
+    }, 30000);
+}
+
+export const bulkMintAndAssignBuildingCNFTIdTo = async(address: string, building_ids: number[]) => {
+    // dont await cause we want it to run asynchronously
+    bulkMintCNFTTo(new PublicKey(address), "building", building_ids);
+    setTimeout(() => {
+        // might want to move this to a cron job that fills up missing accounts
+        bulkAssignCNFTToBuilding(address, building_ids);
     }, 30000);
 }
 
@@ -274,6 +359,33 @@ export const assignCNFTToBuilding = async(address: string, building_id: number) 
             let query = `UPDATE buildings SET mint_address = '${cnftId}' WHERE id = ${building_id}`;
             db.executeQuery(query);
             console.log('building assigned');
+        }
+    };
+}
+
+export const bulkAssignCNFTToBuilding = async(address: string, building_ids: number[]) => {
+    let db = new DB();
+    let addressCNFTs = await getAddressCNFTs(address);
+    for(const item of addressCNFTs) {
+        let uri = (item.content.json_uri as string);
+        let startsWith = getDappDomain() + `/building/`;
+        if(!uri.startsWith(startsWith)) {
+            continue;
+        }
+
+        try {
+            let building_id = parseInt(uri.replace(startsWith, "").replace(".json", ""));
+            if(building_ids.includes(building_id)) {
+                let cnftId = item.id;
+                let query = `UPDATE buildings SET mint_address = '${cnftId}' WHERE id = ${building_id}`;
+                db.executeQuery(query);
+                console.log('building assigned');
+            }
+        }
+
+        catch(e) {
+            console.log(`Error getting: ${uri}`);
+            continue;
         }
     };
 }
