@@ -7,6 +7,7 @@ import cors from 'cors';import _ from 'lodash';
 import path from 'path';
 import dotenv from 'dotenv';
 import { routes as apiRoutes } from './src/Routes/api';
+import { routes as metadataRoutes } from './src/Routes/metadata';
 import { getServerPort, verifySignature } from './utils';
 import { VERIFY_MESSAGE } from './src/Constants';
 import { contentUpload } from './src/Routes/Upload';
@@ -66,6 +67,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/api', apiRoutes);
+app.use('/metadata', metadataRoutes);
 
 //connect app to websocket
 let http = createServer(app);
