@@ -163,7 +163,7 @@ export const mintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType, me
     return signature;
 }
 
-export const mintAndAssignCNFTIdTo = async(address: string, type: CNFTType) => {
+export const mintAndAssignAccountCNFTIdTo = async(address: string) => {
     let db = new DB();
     let query = `select id from accounts where address = '${address}'`;
     let ret = await db.executeQueryForSingleResult<{id: number}>(query);
@@ -173,10 +173,19 @@ export const mintAndAssignCNFTIdTo = async(address: string, type: CNFTType) => {
     }
 
     // dont await cause we want it to run asynchronously
-    mintCNFTTo(new PublicKey(address), type, ret.id);
+    mintCNFTTo(new PublicKey(address), "account", ret.id);
     setTimeout(() => {
         // might want to move this to a cron job that fills up missing accounts
-        assignAccountCNFTToAccount(address, type);
+        assignCNFTToAccount(address);
+    }, 30000);
+}
+
+export const mintAndAssignBuildingCNFTIdTo = async(address: string, building_id: number) => {
+    // dont await cause we want it to run asynchronously
+    mintCNFTTo(new PublicKey(address), "building", building_id);
+    setTimeout(() => {
+        // might want to move this to a cron job that fills up missing accounts
+        assignCNFTToBuilding(address, building_id);
     }, 30000);
 }
 
@@ -243,15 +252,28 @@ export const getAddressCNFTs = async(address: string) => {
     });
 }
 
-export const assignAccountCNFTToAccount = async(address: string, type: CNFTType) => {
+export const assignCNFTToAccount = async(address: string) => {
     let db = new DB();
     let addressCNFTs = await getAddressCNFTs(address);
     for(const item of addressCNFTs) {
-        if((item.content.json_uri as string).startsWith(getDappDomain() + `/${type}`)) {
+        if((item.content.json_uri as string).startsWith(getDappDomain() + `/account`)) {
             let cnftId = item.id;
             let query = `UPDATE accounts SET mint_address = '${cnftId}' WHERE address = '${address}'`;
             db.executeQuery(query);
             console.log('account assigned');
+        }
+    };
+}
+
+export const assignCNFTToBuilding = async(address: string, building_id: number) => {
+    let db = new DB();
+    let addressCNFTs = await getAddressCNFTs(address);
+    for(const item of addressCNFTs) {
+        if((item.content.json_uri as string) === getDappDomain() + `/building/${building_id}.json`) {
+            let cnftId = item.id;
+            let query = `UPDATE buildings SET mint_address = '${cnftId}' WHERE id = ${building_id}`;
+            db.executeQuery(query);
+            console.log('building assigned');
         }
     };
 }
