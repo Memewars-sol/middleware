@@ -2,7 +2,7 @@ import { Transaction, SystemProgram, Keypair, Connection, PublicKey, sendAndConf
 import { MINT_SIZE, TOKEN_PROGRAM_ID, createInitializeMintInstruction, getMinimumBalanceForRentExemptMint, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createMintToInstruction, createTransferInstruction } from '@solana/spl-token';
 import { DataV2, TokenStandard, createNft, createV1, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { irysStorage, keypairIdentity, Metaplex, UploadMetadataInput } from '@metaplex-foundation/js';
-import { getAdminAccount, getDappDomain, getNonPublicKeyPlayerAccount, getPlayerPublicKey, getRPCEndpoint, getTokenAccounts, getTx, sendSOLTo, sleep } from "../../utils";
+import { getMetadataUrl, getAdminAccount, getDappDomain, getMetadataBaseUrlForType, getNonPublicKeyPlayerAccount, getPlayerPublicKey, getRPCEndpoint, getTokenAccounts, getTx, sendSOLTo, sleep } from "../../utils";
 import { getKeypairMerkleMintAddress, getKeypairMintAddress, loadOrGenerateKeypair } from "../Helpers";
 import fetch from 'node-fetch';
 import DB from "../DB";
@@ -110,7 +110,6 @@ export const createMerkleTree = async() => {
 
 // average mint time 1.7s
 export const mintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType, metadataId: number) => {
-    console.log('minting cnft');
     const umi = createUmi(getRPCEndpoint());
 
     // merkle account owner is always "account"
@@ -132,7 +131,7 @@ export const mintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType, me
 
     let res = await mintToCollectionV1(umi, {
         metadata: {
-            uri: getDappDomain() + `/${type}/${metadataId}.json`,
+            uri: getMetadataUrl(type, metadataId),
             name: `Memewars ${type}`,
             symbol: `M${type.substring(0, 2).toUpperCase()}`,
             sellerFeeBasisPoints: 0,
@@ -162,7 +161,6 @@ export const mintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType, me
 // average mint time 1.7s
 // have to be careful to not exceed transaction size
 export const bulkMintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType, metadataIds: number[]) => {
-    console.log('minting cnft');
     const MAX_BULK_SIZE = 1;
     const umi = createUmi(getRPCEndpoint());
 
@@ -186,7 +184,7 @@ export const bulkMintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType
     for(const metadataId of metadataIds) {
         let res = await mintToCollectionV1(umi, {
             metadata: {
-                uri: getDappDomain() + `/${type}/${metadataId}.json`,
+                uri: getMetadataUrl(type, metadataId),
                 name: `Memewars ${type}`,
                 symbol: `M${type.substring(0, 2).toUpperCase()}`,
                 sellerFeeBasisPoints: 0,
@@ -295,15 +293,16 @@ export const getCollectionCNFTs = async(name: string) => {
         }),
     });
     const { result } = await response.json();
+
+    // console.log(`Assets by Collection: ${collectionAccount.publicKey.toBase58()}`);
+    // result.items.forEach((item: any) => {
+    //     if(item.compression.compressed) {
+    //         console.log(item.content.metadata);
+    //         console.log(item.id);
+    //     }
+    // });
+
     return result?.items ?? [];
-    console.log(`Assets by Collection: ${collectionAccount.publicKey.toBase58()}`);
-    // console.log(result.items);
-    result.items.forEach((item: any) => {
-        if(item.compression.compressed) {
-            console.log(item.content.metadata);
-            console.log(item.id);
-        }
-    });
 }
 
 // metadata path = dapp
@@ -325,24 +324,31 @@ export const getAddressCNFTs = async(address: string) => {
         }),
     });
     const { result } = await response.json();
+
+    // console.log(`Assets by Owner: ${address}`);
+    // result.items.forEach((item: any) => {
+    //     console.log(item);
+    //     if(item.compression.compressed) {
+    //         console.log(item.content.metadata);
+    //         console.log(item.id);
+    //     }
+    // });
+
     return result?.items ?? [];
-    console.log(`Assets by Owner: ${address}`);
-    // console.log(result.items);
-    result.items.forEach((item: any) => {
-        console.log(item);
-        if(item.compression.compressed) {
-            console.log(item.content.metadata);
-            console.log(item.id);
-        }
-    });
 }
 
 export const assignCNFTToAccount = async(address: string) => {
     let db = new DB();
     let addressCNFTs = await getAddressCNFTs(address);
+    let collectionMintAddress = getKeypairMintAddress("account");
+
     for(const item of addressCNFTs) {
-        // need to check collection too
-        if((item.content.json_uri as string).startsWith(getDappDomain() + `/account`)) {
+        // not in collection
+        if(item.grouping.filter((x: any) => x.group_key === "collection" && x.group_value === collectionMintAddress).length === 0) {
+            continue;
+        }
+
+        if((item.content.json_uri as string).startsWith(getMetadataBaseUrlForType("account"))) {
             let cnftId = item.id;
             let query = `UPDATE accounts SET mint_address = '${cnftId}' WHERE address = '${address}'`;
             db.executeQuery(query);
@@ -354,8 +360,15 @@ export const assignCNFTToAccount = async(address: string) => {
 export const assignCNFTToBuilding = async(address: string, building_id: number) => {
     let db = new DB();
     let addressCNFTs = await getAddressCNFTs(address);
+    let collectionMintAddress = getKeypairMintAddress("building");
+
     for(const item of addressCNFTs) {
-        if((item.content.json_uri as string) === getDappDomain() + `/building/${building_id}.json`) {
+        // not in collection
+        if(item.grouping.filter((x: any) => x.group_key === "collection" && x.group_value === collectionMintAddress).length === 0) {
+            continue;
+        }
+
+        if((item.content.json_uri as string) === getMetadataUrl("building", building_id)) {
             let cnftId = item.id;
             let query = `UPDATE buildings SET mint_address = '${cnftId}' WHERE id = ${building_id}`;
             db.executeQuery(query);
@@ -367,22 +380,31 @@ export const assignCNFTToBuilding = async(address: string, building_id: number) 
 export const bulkAssignCNFTToBuilding = async(address: string, building_ids: number[]) => {
     let db = new DB();
     let addressCNFTs = await getAddressCNFTs(address);
+
+    let startsWith = getMetadataBaseUrlForType("building");
+    let collectionMintAddress = getKeypairMintAddress("building");
+
     for(const item of addressCNFTs) {
         let uri = (item.content.json_uri as string);
-        let startsWith = getDappDomain() + `/building/`;
         if(!uri.startsWith(startsWith)) {
             continue;
         }
 
+        // not in collection
+        if(item.grouping.filter((x: any) => x.group_key === "collection" && x.group_value === collectionMintAddress).length === 0) {
+            continue;
+        }
+
         try {
-            // need to check collection too
-            let building_id = parseInt(uri.replace(startsWith, "").replace(".json", ""));
-            if(building_ids.includes(building_id)) {
-                let cnftId = item.id;
-                let query = `UPDATE buildings SET mint_address = '${cnftId}' WHERE id = ${building_id}`;
-                db.executeQuery(query);
-                console.log('building assigned');
+            let building_id = parseInt(uri.replace(startsWith + "/", "").replace(".json", ""));
+            if(!building_ids.includes(building_id)) {
+                console.log(`building id not in ids : ${building_id}`);
+                continue;
             }
+            let cnftId = item.id;
+            let query = `UPDATE buildings SET mint_address = '${cnftId}' WHERE id = ${building_id}`;
+            db.executeQuery(query);
+            console.log('building assigned');
         }
 
         catch(e) {
