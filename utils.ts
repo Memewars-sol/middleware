@@ -17,6 +17,7 @@ import bs58 from 'bs58';
 import axios from 'axios';
 import { md5 } from 'js-md5';
 import { createAssociatedTokenAccountInstruction, createTransferInstruction, getAccount, getAssociatedTokenAddress } from '@solana/spl-token';
+import { CNFTType } from './src/CNFT/types';
 
 export function sleep(ms: number) {
     return new Promise((resolve, reject) => {
@@ -456,6 +457,18 @@ export const getBeDomain = () => {
  */
 export const getDappDomain = () => {
     return process.env.DAPP_DOMAIN;
+}
+
+export const getMetadataBaseUrl = () => {
+    return process.env.DAPP_DOMAIN + "/metadata";
+}
+
+export const getMetadataBaseUrlForType = (type: CNFTType) => {
+    return process.env.DAPP_DOMAIN + `/metadata/${type}`;
+}
+
+export const getMetadataUrl = (type: CNFTType, metadataId: string | number) => {
+    return getMetadataBaseUrl() + `/${type}/${metadataId}.json`
 }
 
 export const generateNftUri = () => {
