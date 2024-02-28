@@ -1,10 +1,11 @@
 import { PublicKey } from "@metaplex-foundation/js";
 // import { initializeTree } from "./src/NFT/Initializer";
 import { initializeToken, mintTo } from "./src/Token";
-import { clawbackSOLFrom, getRPCEndpoint, getTx, sleep } from "./utils";
-import { getKeypairMintAddress, loadOrGenerateKeypair, setKeypairMintAddress } from "./src/Helpers";
-import { createCollection, createMerkleTree, getAddressCNFTs, getCollectionCNFTs, mintCNFTTo } from "./src/CNFT";
+import { clawbackSOLFrom, getDappDomain, getRPCEndpoint, getTx, sleep } from "./utils";
+import { getKeypairMintAddress, loadOrGenerateKeypair, setKeypairMerkleMintAddress, setKeypairMintAddress } from "./src/Helpers";
+import { assignCNFTToAccount, createCollection, createMerkleTree, getAddressCNFTs, getCollectionCNFTs, mintAndAssignAccountCNFTIdTo, mintAndAssignBuildingCNFTIdTo, mintCNFTTo } from "./src/CNFT";
 import { ParsedInstruction } from "@solana/web3.js";
+import { CNFTType } from "./src/CNFT/types";
 
 // for testing purposes only
 (async() => {
@@ -22,19 +23,24 @@ import { ParsedInstruction } from "@solana/web3.js";
     // await clawbackSOLFrom(clawbackKeypair);
 
     // cNFT
-    let cNFTname = "testv6col";
-    let cNFTMerkleName = cNFTname + "_merkle";
-    let {mintAddress: collectionMintAddress} = await createCollection({ name: cNFTname, uri: "https://testv5.com "});
-    setKeypairMintAddress(cNFTname, collectionMintAddress);
-    let {mintAddress: merkleMintAddress} = await createMerkleTree(cNFTname);
-    setKeypairMintAddress(cNFTMerkleName, merkleMintAddress);
-    await mintCNFTTo(new PublicKey("EAV68HCw33Aj1b1t4Kr6fiWmBaybaTX8U6hSHsp2aTXa"), cNFTname);
-    await sleep(30000);
-    await getCollectionCNFTs(cNFTname);
-    await getAddressCNFTs("EAV68HCw33Aj1b1t4Kr6fiWmBaybaTX8U6hSHsp2aTXa");
+    let type: CNFTType = "account";
+    let {mintAddress: accountCollectionMintAddress} = await createCollection({ name: type, uri: `${getDappDomain()}/collection/${type}.json`});
+    setKeypairMintAddress(type, accountCollectionMintAddress);
+    type = "building";
+    let {mintAddress: buidlingCollectionMintAddress} = await createCollection({ name: type, uri: `${getDappDomain()}/collection/${type}.json`});
+    setKeypairMintAddress(type, buidlingCollectionMintAddress);
 
-    let clawbackKeypair = loadOrGenerateKeypair(cNFTname);
-    await clawbackSOLFrom(clawbackKeypair);
-    clawbackKeypair = loadOrGenerateKeypair(cNFTMerkleName);
-    await clawbackSOLFrom(clawbackKeypair);
+    // need to create one every 20k cNFTs minted
+    // merkle key is only needed to mint cNFTs, once full, can just + index, but good to store in db just in case
+    // can use merkle index
+    let {mintAddress: merkleMintAddress} = await createMerkleTree();
+    setKeypairMerkleMintAddress(type, merkleMintAddress);
+    // await getCollectionCNFTs(type);
+
+    // await mintAndAssignAccountCNFTIdTo("5fCJG9JoexD9JKfq4JxARVByb6hKSkiuDH1HGS1HVATd");
+    // await mintAndAssignBuildingCNFTIdTo("5fCJG9JoexD9JKfq4JxARVByb6hKSkiuDH1HGS1HVATd", 1);
+
+    // let clawbackKeypair = loadOrGenerateKeypair(type);
+    // await clawbackSOLFrom(clawbackKeypair);
+    // await getAddressCNFTs("GvevEJFHecNEZFk9jZ7j6dyk6zQNXHsFCe8EZGsvuNrE", "account");
 })();

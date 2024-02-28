@@ -7,6 +7,7 @@ import cors from 'cors';import _ from 'lodash';
 import path from 'path';
 import dotenv from 'dotenv';
 import { routes as apiRoutes } from './src/Routes/api';
+import { routes as metadataRoutes } from './src/Routes/metadata';
 import { getServerPort, verifySignature } from './utils';
 import { VERIFY_MESSAGE } from './src/Constants';
 import { contentUpload } from './src/Routes/Upload';
@@ -34,27 +35,39 @@ app.use(cors({
 
 app.use((req, res, next) => {
     // we need to check the multipart in their respective paths
-    if(req.is('multipart/form-data')) {
-        console.log('is multipart');
+    // if(req.is('multipart/form-data')) {
+    //     console.log('is multipart');
+    //     next();
+    //     return;
+    // }
+
+    // const { address, signature, message } = req.body;
+    // if(!signature || !address) {
+    //     console.log('invalid params');
+    //     return res.status(400).send('Invalid params');
+    // }
+
+    // let verified = verifySignature(address, signature, message ?? VERIFY_MESSAGE);
+    // if(!verified) {
+    //     return res.status(401).send("Unauthorized");
+    // }
+
+    // if it's get json then we dont need to check
+    if(req.path.match(/\/metadata\/(account|building)\/(.*)\.json/g) && req.method.toLowerCase() === "get") {
         next();
         return;
     }
 
-    const { address, signature, message } = req.body;
-    if(!signature || !address) {
-        console.log('invalid params');
-        return res.status(400).send('Invalid params');
-    }
-
-    let verified = verifySignature(address, signature, message ?? VERIFY_MESSAGE);
-    if(!verified) {
+    const { server_key } = req.body;
+    if(!server_key || server_key !== process.env.CS_SERVER_KEY) {
+        console.log('Unauthorized');
         return res.status(401).send("Unauthorized");
     }
-
     next();
 });
 
 app.use('/api', apiRoutes);
+app.use('/metadata', metadataRoutes);
 
 //connect app to websocket
 let http = createServer(app);
