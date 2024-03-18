@@ -532,9 +532,12 @@ export default [
         CREATE TABLE IF NOT EXISTS public.lands
         (
             id serial PRIMARY KEY,
-            mint_address text not null,
+            mint_address text,
             x int not null,
             y int not null,
+            level int not null,
+            citizen_cap int not null,
+            gems_per_block decimal(18, 8) not null,
             owner_address text,
             guild_id bigint,
             is_booked boolean default false,

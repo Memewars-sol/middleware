@@ -94,18 +94,14 @@ export const getRandomColor = () => {
     return color;
 }
 
-export const getRandomNumber = (min: number, max: number, isInteger = false) => {
+export const getRandomNumber = (min: number, max: number, isInteger = false, decimals: number = 3) => {
     let rand = min + (Math.random() * (max - min));
     if(isInteger) {
-        rand = Math.round(rand);
+        return Math.round(rand);
     }
 
-    else {
-        // to 3 decimals
-        rand = Math.floor(rand * 1000) / 1000;
-    }
-
-    return rand;
+    // to x decimals
+    return Math.floor(rand * Math.pow(10, decimals)) / Math.pow(10, decimals);
 }
 
 export const getRandomChance = () => {
