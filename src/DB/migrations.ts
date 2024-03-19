@@ -499,4 +499,107 @@ export default [
             DROP COLUMN is_cnft;
         `,
     },
+
+    // guild cache
+    {
+        name: "create_guilds_table",
+        query: `
+        CREATE TABLE IF NOT EXISTS public.guilds
+        (
+            id serial PRIMARY KEY,
+            mint_address text UNIQUE not null,
+            logo text null,
+            name text null
+        );
+        CREATE INDEX guilds_mint_address_idx ON guilds(mint_address);`,
+        rollback_query: `DROP INDEX guilds_mint_address_idx; DROP TABLE guilds;`
+    },
+
+    {
+        name: "add_guild_id_to_accounts",
+        query: `
+            ALTER TABLE accounts
+            ADD COLUMN guild_id bigint;`,
+        rollback_query: `
+            ALTER TABLE accounts
+            DROP COLUMN guild_id;
+        `,
+    },
+    //lands
+    {
+        name: "create_lands_table",
+        query: `
+        CREATE TABLE IF NOT EXISTS public.lands
+        (
+            id serial PRIMARY KEY,
+            mint_address text,
+            x int not null,
+            y int not null,
+            level int not null,
+            citizen_cap int not null,
+            gems_per_block decimal(18, 8) not null,
+            owner_address text,
+            guild_id bigint,
+            is_booked boolean default false,
+            minted_at timestamp
+        );`,
+        rollback_query: `DROP TABLE lands;`
+    },
+
+    // land pivot table
+    {
+        name: "create_land_citizens_table",
+        query: `
+        CREATE TABLE IF NOT EXISTS public.land_citizens
+        (
+            id serial PRIMARY KEY,
+            account_id bigint UNIQUE not null,
+            land_id bigint not null
+        );`,
+        rollback_query: `DROP TABLE land_citizens;`
+    },
+    // forums // might need to go on chain?
+    {
+        name: "create_forum_posts_table",
+        query: `
+        CREATE TABLE IF NOT EXISTS public.forum_posts
+        (
+            id serial PRIMARY KEY,
+            guild_id bigint not null,
+            title text not null,
+            description text,
+            content text not null,
+            voting_id text, -- on chain voting
+            created_by text not null, -- address
+            created_at timestamp default current_timestamp
+        );`,
+        rollback_query: `DROP TABLE forum_posts;`
+    },
+    {
+        name: "create_forum_comments_table",
+        query: `
+        CREATE TABLE IF NOT EXISTS public.forum_comments
+        (
+            id serial PRIMARY KEY,
+            forum_post_id bigint not null,
+            comment text not null,
+            created_by text not null, -- address
+            created_at timestamp default current_timestamp
+        );`,
+        rollback_query: `DROP TABLE forum_comments;`
+    },
+
+    // payments table, use helius webhook
+    // {
+    //     name: "create_payments_table",
+    //     query: `
+    //     CREATE TABLE IF NOT EXISTS public.payments
+    //     (
+    //         id serial PRIMARY KEY,
+    //         account_id bigint not null,
+    //         tx_id text not null,
+    //         amount_usd decimal(18,8) not null
+    //     );`,
+    //     rollback_query: `DROP TABLE payments;`
+    // },
 ];
