@@ -578,7 +578,7 @@ export default [
     {
         name: "create_forum_comments_table",
         query: `
-        CREATE TABLE IF NOT EXISTS public.forum_posts
+        CREATE TABLE IF NOT EXISTS public.forum_comments
         (
             id serial PRIMARY KEY,
             forum_post_id bigint not null,
@@ -586,7 +586,7 @@ export default [
             created_by text not null, -- address
             created_at timestamp default current_timestamp
         );`,
-        rollback_query: `DROP TABLE forum_posts;`
+        rollback_query: `DROP TABLE forum_comments;`
     },
 
     // payments table, use helius webhook

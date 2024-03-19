@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import { seedBuildings, seedLand, seedSpells, seedUnits } from './src/Seeders';
+import { seedBuildings, seedGuilds, seedLand, seedSpells, seedUnits } from './src/Seeders';
 import prompt from 'prompt-sync';
 dotenv.config({ path: path.join(__dirname, '.env')});
 
@@ -11,6 +11,7 @@ dotenv.config({ path: path.join(__dirname, '.env')});
         await seedSpells();
         await seedUnits();
         await seedLand();
+        await seedGuilds();
         console.log('Seed ended, press CTRL / CMD + C');
     }
     return;

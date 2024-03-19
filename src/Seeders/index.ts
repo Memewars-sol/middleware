@@ -234,6 +234,7 @@ export const seedLand = async() => {
     }
 
     if(insertValues.length == 0) {
+        console.log(`Seeded ${table}`);
         return true;
     }
 
@@ -253,4 +254,34 @@ export const seedLand = async() => {
 
 export const seedGuilds = async() => {
     // might not need
+    let db = new DB();
+    let table = 'guilds';
+    let checkerQuery = `SELECT COUNT(*) as count FROM ${table}`;
+    let checkerRes = await db.executeQueryForResults<{count: number}>(checkerQuery);
+
+    if(checkerRes && checkerRes[0].count > 0) {
+        console.log(`${table} already seeded! Skipping..`);
+        return;
+    }
+
+    let columns: string[] = ['mint_address', 'logo', 'name'];
+
+    let guilds = [
+        ["7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr", "https://popcatsol.com/img/logo.png", "POPCAT"],
+        ["FYa25XnBsXQXAdTnsyKBKd5gZ1VZhChBRF57CqfRxJZX", "https://img.fotofolio.xyz/?url=https%3A%2F%2Fbafybeifx7lchopsihh6qhw5nvq4tjbwl4wf2wy745mugvhdq5krk2bwsmi.ipfs.nftstorage.link", "monkeyhaircut"],
+        ["7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3", "https://img.fotofolio.xyz/?url=https%3A%2F%2Fbafkreih44n5jgqpwuvimsxzroyebjunnm47jttqusb4ivagw3vsidil43y.ipfs.nftstorage.link", "slerf"],
+    ];
+
+    let query = getInsertQuery(columns, guilds, table);
+    try {
+        await db.executeQuery(query);
+        console.log(`Seeded ${table}`);
+        return true;
+    }
+
+    catch (e){
+        console.log(e);
+        return false;
+    }
+
 }
