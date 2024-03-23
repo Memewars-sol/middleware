@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { contentUpload } from './Upload';
-import { getAllGovernanceData, getAllProposalsData, getAllRealms, getGovernanceData, getProposalData, getRealmData } from '../Governance/Services/step0_Query';
+import { getAllGovernanceData, getAllProposalsData, getAllRealms, getGovernanceData, getProposalData, getRealmData, getTokenOwnerData } from '../Governance/Services/step0_Query';
 import { PublicKey } from '@solana/web3.js';
 import { createMint } from '../Governance/Services/step1_CreateMint';
 import { mintToken } from '../Governance/Services/step2_MintToken';
@@ -136,36 +136,50 @@ routes.post('/withdrawGovernanceToken', contentUpload.none(), async(req, res) =>
 // governance query
 routes.post('/getRealm', contentUpload.none(), async(req, res) => {
     let { realmPk } = req.body;
-    return res.json(await getRealmData(new PublicKey(realmPk)));
+    return res.json({
+        data: await getRealmData(new PublicKey(realmPk))
+    });
 });
 
 routes.post('/getAllRealms', contentUpload.none(), async(req, res) => {
-    return res.json(await getAllRealms());
+    return res.json({
+        data: await getAllRealms()
+    });
 });
 
 routes.post('/getTokenOwnerRecord', contentUpload.none(), async(req, res) => {
     let { governancePk } = req.body;
-    return res.json(await getGovernanceData(new PublicKey(governancePk)));
+    return res.json({
+        data: await getTokenOwnerData(new PublicKey(governancePk))
+    });
 });
 
 routes.post('/getGovernance', contentUpload.none(), async(req, res) => {
     let { governancePk } = req.body;
-    return res.json(await getGovernanceData(new PublicKey(governancePk)));
+    return res.json({
+        data: await getGovernanceData(new PublicKey(governancePk))
+    });
 });
 
 routes.post('/getAllGovernances', contentUpload.none(), async(req, res) => {
     let { realmPk } = req.body;
-    return res.json(await getAllGovernanceData(new PublicKey(realmPk)));
+    return res.json({
+        data: await getAllGovernanceData(new PublicKey(realmPk))
+    });
 });
 
 routes.post('/getProposal', contentUpload.none(), async(req, res) => {
     let { proposalPk } = req.body;
-    return res.json(await getProposalData(new PublicKey(proposalPk)));
+    return res.json({
+        data: await getProposalData(new PublicKey(proposalPk))
+    });
 });
 
 routes.post('/getAllProposals', contentUpload.none(), async(req, res) => {
     let { realmPk } = req.body;
-    return res.json(await getAllProposalsData(new PublicKey(realmPk)));
+    return res.json({
+        data: await getAllProposalsData(new PublicKey(realmPk))
+    });
 });
 
 
