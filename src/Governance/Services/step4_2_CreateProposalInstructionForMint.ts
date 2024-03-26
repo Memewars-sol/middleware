@@ -7,7 +7,7 @@ import { TOKEN_PROGRAM_ID, createMintToInstruction } from "@solana/spl-token";
 import { createInstructionData, getGovernanceProgramVersion, withInsertTransaction } from '@solana/spl-governance';
 import { connection, programId } from '../Tools/env';
 
-export const createProposalInstruction = async (ataPk: PublicKey, mintPk: PublicKey, ownerPk: PublicKey, tokenOwnerRecordPk: PublicKey, governancePk: PublicKey, proposalPk: PublicKey, governanceAuthority: PublicKey, mintAuthorityPk: PublicKey, amount: number = 10000000) => {
+export const createProposalInstruction = async (ownerPk: PublicKey, mintPk: PublicKey, tokenOwnerRecordPk: PublicKey, governancePk: PublicKey, governanceAuthority: PublicKey, ataPk: PublicKey, proposalPk: PublicKey, mintAuthorityPk: PublicKey, amount: number = 10000000) => {
     const signers: Keypair[] = [];
     const instructions: TransactionInstruction[] = [];
 

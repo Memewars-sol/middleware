@@ -16,8 +16,6 @@ export const withCreateMint = async (
     decimals: number,
     payerPk: PublicKey
 ) => {
-    console.log(`TOKEN_PROGRAM_ID: ${TOKEN_PROGRAM_ID.toBase58()}`);
-
     const mintRentExempt = await connection.getMinimumBalanceForRentExemption(
         MintLayout.span
     );

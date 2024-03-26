@@ -19,8 +19,9 @@ export async function getSerializedTransactionInstructions(
 
     // Fetch recentBlockhash close to the transaction construction time
     transaction.recentBlockhash = (await connection.getLatestBlockhash("finalized")).blockhash;
-    console.log(`transaction.recentBlockhash: ${transaction.recentBlockhash}`);
+
     console.log(`signers.length: ${signers.length}`);
+
     // Sign the transaction with the mintAccount only
     if (_.size(signers)) {
         transaction.partialSign(...signers);

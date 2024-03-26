@@ -20,7 +20,7 @@ export const fetchVotingRecords = async(realmPk: PublicKey, proposalPk: PublicKe
         filters
     );
 
-    console.log(JSON.stringify(votingRecords));
+    // console.log(JSON.stringify(votingRecords));
 
 
     // return votingRecords;

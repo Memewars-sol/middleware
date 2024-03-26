@@ -5,13 +5,15 @@ import {
 } from '@solana/web3.js';
 import fs from 'fs-extra';
 import appRootPath from 'app-root-path';
-import { VoteType, getGovernanceProgramVersion, withAddSignatory, withCreateProposal } from '@solana/spl-governance';
+import { MultiChoiceType, VoteType, getGovernanceProgramVersion, withAddSignatory, withCreateProposal } from '@solana/spl-governance';
 import { sendTransaction } from '../Tools/sdk';
 import { connection, programId } from '../Tools/env';
 import { RealmData } from '../types';
 import { getSerializedTransactionInstructions } from '../Tools/serialize';
+import { getAllProposalsData } from './step0_Query';
+import _ from 'lodash';
 
-export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mintPk: PublicKey, tokenOwnerRecordPk: PublicKey, governancePk: PublicKey, governanceAuthorityPk: PublicKey, title: string, description: string, voteOptions: string[] = ['Approve'], proposalIndex: number = 0, useDenyOption: boolean = true, voteType: VoteType = VoteType.SINGLE_CHOICE) => {
+export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mintPk: PublicKey, tokenOwnerRecordPk: PublicKey, governancePk: PublicKey, governanceAuthorityPk: PublicKey, title: string, description: string, voteOptions: string[] = ['Approve'], useDenyOption: boolean = true, singleOrMultiVote: 'single' | 'multiple' = 'multiple') => {
     const signers: Keypair[] = [];
     const instructions: TransactionInstruction[] = [];
 
@@ -23,7 +25,9 @@ export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mint
 
     // Create single choice Approve/Deny proposal with instruction to mint more governance tokens
     // Create multi-choice proposal
-    // const voteType = VoteType.MULTI_CHOICE(choiceType, minVoterOptions, maxVoterOptions, maxWinningOptions);
+    const voteType = singleOrMultiVote === 'single' ? VoteType.SINGLE_CHOICE : VoteType.MULTI_CHOICE(MultiChoiceType.FullWeight, 1, 10, 1);
+
+    const allProposal = await getAllProposalsData(realmPk);
 
     const proposalPk = await withCreateProposal(
         instructions,
@@ -36,7 +40,7 @@ export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mint
         description, // description
         mintPk, // governance token
         governanceAuthorityPk, // governance authority
-        proposalIndex, // proposal index (increase+1 for new proposal)
+        _.size(allProposal), // proposal index (increase+1 for new proposal)
         voteType, // single / multiple
         voteOptions,
         useDenyOption,
