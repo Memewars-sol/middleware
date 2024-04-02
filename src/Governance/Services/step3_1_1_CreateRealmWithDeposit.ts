@@ -111,8 +111,8 @@ export const createRealmWithDeposit = async (realmName: string, ataPk: PublicKey
     const serializedTransaction = await getSerializedTransactionInstructions(instructions, signers, ownerPk);
 
     return {
-        serializedTransaction,
-        addresses: {
+        data: serializedTransaction,
+        details: {
             governancePk: governancePk.toBase58(),
             tokenOwnerRecordPk: tokenOwnerRecordPk.toBase58(),
             realmPk: realmPk.toBase58(),

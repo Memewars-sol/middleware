@@ -52,6 +52,6 @@ export interface RpcTokenBalance {
 }
 
 export interface GovernanceInstructions {
-    serializedTransaction: string;
-    addresses: string[];
+    data: string;
+    details: string | number [];
 }

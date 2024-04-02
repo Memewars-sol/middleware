@@ -627,6 +627,20 @@ export default [
         `,
     },
 
+    {
+        name: "add_status_into_guild_table",
+        query: `
+            CREATE TYPE guild_status AS ENUM ('draft', 'active', 'suspended');
+            ALTER TABLE guilds
+            ADD COLUMN status guild_status;
+        `,
+        rollback_query: `
+            ALTER TABLE guilds
+            DROP COLUMN status;
+            DROP TYPE guild_status;
+        `,
+    },
+
 
 
     // payments table, use helius webhook

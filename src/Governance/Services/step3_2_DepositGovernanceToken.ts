@@ -37,7 +37,13 @@ export const depositGovernanceToken = async(realmPk: PublicKey, ataPk: PublicKey
     // Assuming 'transaction' is a Solana Transaction object fully prepared and possibly signed
     const serializedTransaction = await getSerializedTransactionInstructions(instructions, signers, ownerPk);
 
-    return serializedTransaction;
+    return {
+        data: serializedTransaction,
+        details: {
+            tokenOwnerRecordPk: tokenOwnerRecordPk.toBase58(),
+            ataPk: ataPk.toBase58()
+        }
+    };
 
     // const depositTx = await sendTransaction(connection, instructions, signers, owner);
     // console.log(`https://solscan.io/tx/${depositTx}?cluster=devnet`);

@@ -29,12 +29,14 @@ routes.post('/createToken', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1,
-            data: await createMint(new PublicKey(ownerPk))
+            data: await createMint(new PublicKey(ownerPk)),
+            details: null
         });
     } catch(e) {
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -46,12 +48,14 @@ routes.post('/mintToken', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1 ,
-            data: await mintToken(new PublicKey(ownerPk), new PublicKey(mintPk), mintAmount)
+            data: await mintToken(new PublicKey(ownerPk), new PublicKey(mintPk), mintAmount),
+            details: null
         });
     } catch(e) {
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -66,18 +70,19 @@ routes.post('/createRealmWithDeposit', contentUpload.none(), async(req, res) => 
     );
 
     try {
-        const data = await createRealmWithDeposit(realmName, ataPk, new PublicKey(ownerPk), new PublicKey(mintPk), Number(amount));
+        const response = await createRealmWithDeposit(realmName, ataPk, new PublicKey(ownerPk), new PublicKey(mintPk), Number(amount));
 
         return res.json({
             status: 1,
-            data: data.serializedTransaction,
-            addresses: data?.addresses
+            data: response.data,
+            details: response?.details
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -89,31 +94,40 @@ routes.post('/createRealm', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1,
-            data: await createRealm(realmName, new PublicKey(ownerPk), new PublicKey(mintPk))
+            data: await createRealm(realmName, new PublicKey(ownerPk), new PublicKey(mintPk)),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
 
 // governance step3.2
 routes.post('/depositGovernanceToken', contentUpload.none(), async(req, res) => {
-    let { realmPk, ataPk, ownerPk, mintPk, amount } = req.body;
+    let { realmPk, ownerPk, mintPk, amount } = req.body;
+
+    const ataPk = await getAssociatedTokenAddress(
+        new PublicKey(mintPk),
+        new PublicKey(ownerPk),
+    );
 
     try {
         return res.json({
             status: 1,
-            data: await depositGovernanceToken(new PublicKey(realmPk), new PublicKey(ataPk), new PublicKey(ownerPk), new PublicKey(mintPk), Number(amount))
+            data: await depositGovernanceToken(new PublicKey(realmPk), ataPk, new PublicKey(ownerPk), new PublicKey(mintPk), Number(amount)),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -125,13 +139,15 @@ routes.post('/createGovernance', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1,
-            data: await createGovernance(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk))
+            data: await createGovernance(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk)),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -143,13 +159,15 @@ routes.post('/createProposal', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1,
-            data: await createProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description, voteOptions, proposalIndex)
+            data: await createProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description, voteOptions, proposalIndex),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -161,13 +179,15 @@ routes.post('/createProposalInstruction', contentUpload.none(), async(req, res) 
     try {
         return res.json({
             status: 1,
-            data: await createProposalInstruction(new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), new PublicKey(ataPk), new PublicKey(proposalPk), new PublicKey(mintAuthorityPk), mintAmount)
+            data: await createProposalInstruction(new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), new PublicKey(ataPk), new PublicKey(proposalPk), new PublicKey(mintAuthorityPk), mintAmount),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -179,13 +199,15 @@ routes.post('/signOffProposal', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1,
-            data: await signOffProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk), new PublicKey(signatoryPk))
+            data: await signOffProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk), new PublicKey(signatoryPk)),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -201,13 +223,15 @@ routes.post('/cancelProposal', contentUpload.none(), async(req, res) => {
 
         return res.json({
             status: 1,
-            data: await cancelProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(governanceAuthorityPk), proposal)
+            data: await cancelProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(governanceAuthorityPk), proposal),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -219,13 +243,15 @@ routes.post('/castVoteForSingleChoice', contentUpload.none(), async(req, res) =>
     try {
         return res.json({
             status: 1,
-            data: await castVote(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk), voteYesOrNo, voteVeto)
+            data: await castVote(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk), voteYesOrNo, voteVeto),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -237,13 +263,15 @@ routes.post('/castVoteForMultiChoice', contentUpload.none(), async(req, res) => 
     try {
         return res.json({
             status: 1,
-            data: await castVoteForMultiChoice(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk), selectedOptionIndex, voteYesOrNo, voteVeto)
+            data: await castVoteForMultiChoice(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk), selectedOptionIndex, voteYesOrNo, voteVeto),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -257,13 +285,15 @@ routes.post('/finalizeVote', contentUpload.none(), async(req, res) => {
 
         return res.json({
             status: 1,
-            data: await finalizeVote(new PublicKey(realmPk), new PublicKey(ownerPk), proposal)
+            data: await finalizeVote(new PublicKey(realmPk), new PublicKey(ownerPk), proposal),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -277,13 +307,15 @@ routes.post('/withdrawGovernanceToken', contentUpload.none(), async(req, res) =>
     try {
         return res.json({
             status: 1,
-            data: await withdrawGoverningTokens(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(governingTokenDestination), new PublicKey(governingTokenMint))
+            data: await withdrawGoverningTokens(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(governingTokenDestination), new PublicKey(governingTokenMint)),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -295,13 +327,15 @@ routes.post('/getRealm', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1,
-            data: await getRealmData(new PublicKey(realmPk))
+            data: await getRealmData(new PublicKey(realmPk)),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -310,13 +344,15 @@ routes.post('/getAllRealms', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1,
-            data: await getAllRealms()
+            data: await getAllRealms(),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -327,13 +363,15 @@ routes.post('/getTokenOwnerRecord', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1,
-            data: await getTokenOwnerData(new PublicKey(walletPk))
+            data: await getTokenOwnerData(new PublicKey(walletPk)),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -342,13 +380,16 @@ routes.post('/getGovernance', contentUpload.none(), async(req, res) => {
     try {
         let { governancePk } = req.body;
         return res.json({
-            data: await getGovernanceData(new PublicKey(governancePk))
+            status: 1,
+            data: await getGovernanceData(new PublicKey(governancePk)),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -359,13 +400,15 @@ routes.post('/getAllGovernances', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1,
-            data: await getAllGovernanceData(new PublicKey(realmPk))
+            data: await getAllGovernanceData(new PublicKey(realmPk)),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -376,13 +419,15 @@ routes.post('/getProposal', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1,
-            data: await getProposalData(new PublicKey(proposalPk))
+            data: await getProposalData(new PublicKey(proposalPk)),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
@@ -393,13 +438,15 @@ routes.post('/getAllProposals', contentUpload.none(), async(req, res) => {
     try {
         return res.json({
             status: 1,
-            data: await getAllProposalsData(new PublicKey(realmPk))
+            data: await getAllProposalsData(new PublicKey(realmPk)),
+            details: null
         });
     } catch(e) {
         console.log(e);
         return res.json({
             status: 0,
-            data: null
+            data: null,
+            details: null
         })
     }
 });
