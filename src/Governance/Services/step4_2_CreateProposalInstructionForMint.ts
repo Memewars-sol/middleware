@@ -21,9 +21,7 @@ export const createProposalInstruction = async (ownerPk: PublicKey, mintPk: Publ
         mintPk,
         ataPk,
         mintAuthorityPk,
-        amount,
-        [],
-        TOKEN_PROGRAM_ID
+        amount
     );
 
     const instructionData = createInstructionData(instruction);

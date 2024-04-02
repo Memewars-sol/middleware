@@ -15,6 +15,10 @@ import { finalizeVote } from '../Governance/Services/step6_FinalizeVote';
 import { withdrawGoverningTokens } from '../Governance/Services/step7_WithdrawGovernanceToken';
 import { createProposalInstruction } from '../Governance/Services/step4_2_CreateProposalInstructionForMint';
 import { signOffProposal } from '../Governance/Services/step4_3_SignOffProposal';
+import { createRealmWithDeposit } from '../Governance/Services/step3_1_1_CreateRealmWithDeposit';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from '@solana/spl-token';
+// import { Token } from '@metaplex/js';
+
 
 export const routes = Router();
 
@@ -45,6 +49,32 @@ routes.post('/mintToken', contentUpload.none(), async(req, res) => {
             data: await mintToken(new PublicKey(ownerPk), new PublicKey(mintPk), mintAmount)
         });
     } catch(e) {
+        return res.json({
+            status: 0,
+            data: null
+        })
+    }
+});
+
+// governance step3.1.1
+routes.post('/createRealmWithDeposit', contentUpload.none(), async(req, res) => {
+    let { realmName, ownerPk, mintPk, amount } = req.body;
+
+    const ataPk = await getAssociatedTokenAddress(
+        new PublicKey(mintPk),
+        new PublicKey(ownerPk),
+    );
+
+    try {
+        const data = await createRealmWithDeposit(realmName, ataPk, new PublicKey(ownerPk), new PublicKey(mintPk), Number(amount));
+
+        return res.json({
+            status: 1,
+            data: data.serializedTransaction,
+            addresses: data?.addresses
+        });
+    } catch(e) {
+        console.log(e);
         return res.json({
             status: 0,
             data: null

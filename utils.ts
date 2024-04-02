@@ -4,11 +4,11 @@ import path from 'path';
 dotenv.config({ path: path.join(__dirname, '.env')});
 import crypto from "crypto";
 import DB from './src/DB';
-import { Connection, GetProgramAccountsFilter, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction, clusterApiUrl, sendAndConfirmRawTransaction, sendAndConfirmTransaction } from '@solana/web3.js';
+import { AccountInfo, Connection, GetProgramAccountsFilter, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction, clusterApiUrl, sendAndConfirmRawTransaction, sendAndConfirmTransaction } from '@solana/web3.js';
 import dayjs, { OpUnitType } from 'dayjs';
 import _ from 'lodash';
 import { loadOrGenerateKeypair, loadPublicKeysFromFile } from './src/Helpers';
-import { v4 as uuidv4 } from 'uuid'; 
+import { v4 as uuidv4 } from 'uuid';
 // import { WrapperConnection } from './src/ReadAPI';
 import { base58, base64 } from 'ethers/lib/utils';
 // import { createTransferCompressedNftInstruction } from './src/NFT/Transfer';
@@ -16,8 +16,10 @@ import nacl from 'tweetnacl';
 import bs58 from 'bs58';
 import axios from 'axios';
 import { md5 } from 'js-md5';
-import { createAssociatedTokenAccountInstruction, createTransferInstruction, getAccount, getAssociatedTokenAddress } from '@solana/spl-token';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction, createTransferInstruction, getAccount, getAssociatedTokenAddress } from '@solana/spl-token';
 import { CNFTType } from './src/CNFT/types';
+import * as Metadata from "@metaplex-foundation/mpl-token-metadata";
+import { Metaplex } from '@metaplex-foundation/js';
 
 export function sleep(ms: number) {
     return new Promise((resolve, reject) => {
@@ -171,7 +173,7 @@ const getTokenAccounts = async(connection: Connection, address: string) => {
           memcmp: {
             offset: 32,     //location of our query in the account (bytes)
             bytes: address,  //our search criteria, a base58 encoded string
-          },            
+          },
         }];
 
     const accounts = await connection.getParsedProgramAccounts(
@@ -288,7 +290,7 @@ export const formatDBParamsToStr = (params : {
 }, options?: {
     separator?: string;
     valueOnly?: boolean;
-    prepend?: string; 
+    prepend?: string;
     shouldLower?: boolean;
     isSearch?: boolean;
 }) => {
@@ -320,11 +322,11 @@ export const formatDBParamsToStr = (params : {
             if (valueOnly) {
                 stringParams.push(`${prepend? prepend + "." : ""}${arrayVal}`);
             }
-            
+
             else if(isSearch) {
                 stringParams.push(`${prepend? prepend + "." : ""}${k} = ANY(${arrayVal})`);
             }
-            
+
             else {
                 stringParams.push(`${prepend? prepend + "." : ""}${k} = ${arrayVal}`);
             }
@@ -493,7 +495,7 @@ export const getNonPublicKeyPlayerAccount = (account: string) => {
 export const getPlayerPublicKey = (isPublicKey: boolean, account: string) => {
     return isPublicKey? new PublicKey(account) : loadOrGenerateKeypair(account, '.user_keys').publicKey;
 }
-/* 
+/*
 export const getAddressNftDetails = async(isPublicKey: boolean, account: string) => {
     // load the env variables and store the cluster RPC url
     const CLUSTER_URL = getRPCEndpoint();
@@ -559,8 +561,8 @@ export const sendTokensTo = async(sendTo: string, token: string, tokenDecimals: 
 
     // get the sender's token account
     const associatedTokenFrom = await getAssociatedTokenAddress(
-      mintToken,
-      currentKeypair.publicKey
+        mintToken,
+        currentKeypair.publicKey
     );
 
     const fromAccount = await getAccount(connection, associatedTokenFrom);
@@ -658,7 +660,7 @@ export const clawbackSOLFrom = async(keypair: Keypair) => {
     await db.log('utils', 'clawbackSolFrom', `${clawbackBalance} SOL, tx: ${txSignature}`);
     return txSignature;
 }
-/* 
+/*
 export const transferCNfts = async(nft_ids: string[], nonPublicKeyAccount: string, to: string) => {
     if(nft_ids.length === 0){
         return true;
@@ -675,7 +677,7 @@ export const transferCNfts = async(nft_ids: string[], nonPublicKeyAccount: strin
     while(tries < 10) {
         try {
             let tx = new Transaction();
-        
+
             for(const nft_id of nft_ids) {
                 let ix = await createTransferCompressedNftInstruction(new PublicKey(to), new PublicKey(nft_id));
                 tx.add(ix);
@@ -756,7 +758,7 @@ export const getTokensTransferredToUser = async(txHash: string, toAddress: strin
     return Math.round(valueUsd * 1e6) / 1e6;
 }
 
-export const verifySignature = (address: string, signature: string, message: string) => { 
+export const verifySignature = (address: string, signature: string, message: string) => {
     return nacl
             .sign
             .detached
@@ -785,10 +787,10 @@ export const createSphereProduct = async(name: string, description: string, rece
             },
             {
                 headers: {
-                'Authorization': `Bearer ${getSphereKey()}` 
+                'Authorization': `Bearer ${getSphereKey()}`
                 }
             });
-    
+
         if(!productRes.data.ok || !productRes.data.data || !productRes.data.data.product) {
             return;
         }
@@ -802,10 +804,10 @@ export const createSphereProduct = async(name: string, description: string, rece
                 },
                 {
                     headers: {
-                    'Authorization': `Bearer ${getSphereKey()}` 
+                    'Authorization': `Bearer ${getSphereKey()}`
                     }
                 });
-        
+
             if(!walletRes.data.ok || !walletRes.data.data || !walletRes.data.data.wallet) {
                 return;
             }
@@ -827,8 +829,8 @@ export const createSphereProduct = async(name: string, description: string, rece
 }
 
 export const createSpherePrice = async(
-    name: string, 
-    description: string, 
+    name: string,
+    description: string,
     productId: string, // sphere's product id
     type: "recurring" | "oneTime",
     currency: string, // token address,
@@ -859,14 +861,14 @@ export const createSpherePrice = async(
                     defaultLength: defaultLength,
                     // usageDefaultQuantity: "",
                 } : undefined
-            }, 
+            },
             {
                 headers: {
-                  'Authorization': `Bearer ${getSphereKey()}` 
+                  'Authorization': `Bearer ${getSphereKey()}`
                 }
             }
         );
-    
+
         if(!priceRes.data.ok || !priceRes.data.data || !priceRes.data.data.price) {
             let db = new DB();
             await db.log('utils', 'createSpherePrice', 'Unable to create price');
@@ -902,14 +904,14 @@ export const createSpherePaymentLink = async(
                 }],
                 wallets,
                 requiresEmail,
-            }, 
+            },
             {
                 headers: {
-                'Authorization': `Bearer ${getSphereKey()}` 
+                'Authorization': `Bearer ${getSphereKey()}`
                 }
             }
         );
-    
+
         if(!paymentLinkRes.data.ok || !paymentLinkRes.data.data || !paymentLinkRes.data.data.paymentLink) {
             let db = new DB();
             await db.log('utils', 'createSpherePaymentLink', 'Unable to create payment link');
@@ -933,4 +935,26 @@ export const getApiKey = () => {
 
 export const getMd5 = (fromString: string) => {
     return md5.hmac(getApiKey(), fromString);
+}
+
+export const getMetadataPDA = async (mint: PublicKey) => {
+    const [publicKey] = await PublicKey.findProgramAddress(
+        [
+            Buffer.from("metadata"),
+            new PublicKey(Metadata.MPL_TOKEN_METADATA_PROGRAM_ID).toBuffer(),
+            mint.toBuffer()
+        ],
+        new PublicKey(Metadata.MPL_TOKEN_METADATA_PROGRAM_ID)
+    );
+    return publicKey;
+}
+
+
+export const getTokenMeta = async (mintAddress: string) => {
+    const connection = new Connection(getRPCEndpoint());
+
+    const metaplex = Metaplex.make(connection);
+    const token = await metaplex.nfts().findByMint({ mintAddress: new PublicKey(mintAddress) });
+
+    return token;
 }

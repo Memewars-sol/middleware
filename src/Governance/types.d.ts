@@ -50,3 +50,8 @@ export interface RpcTokenBalance {
     };
     id: number;
 }
+
+export interface GovernanceInstructions {
+    serializedTransaction: string;
+    addresses: string[];
+}

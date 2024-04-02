@@ -1,4 +1,4 @@
-import { createMintToInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { TOKEN_PROGRAM_ID, createMintToInstruction } from '@solana/spl-token';
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 
 export const withMintTo = async (
@@ -13,9 +13,7 @@ export const withMintTo = async (
             mintPk,
             destinationPk,
             mintAuthorityPk,
-            amount,
-            [],
-            TOKEN_PROGRAM_ID
+            amount
         )
     );
 }

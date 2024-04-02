@@ -40,7 +40,6 @@ export const withCreateMint = async (
             decimals,
             ownerPk,
             freezeAuthorityPk,
-            TOKEN_PROGRAM_ID
         )
     );
 
