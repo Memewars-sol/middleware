@@ -17,6 +17,9 @@ import { createProposalInstruction } from '../Governance/Services/step4_2_Create
 import { signOffProposal } from '../Governance/Services/step4_3_SignOffProposal';
 import { createRealmWithDeposit } from '../Governance/Services/step3_1_1_CreateRealmWithDeposit';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from '@solana/spl-token';
+import { getTokenMeta } from '../../utils';
+import { createProposalAndSignOff } from '../Governance/Services/step4_1_1_CreateProposalAndSignOff';
+import { fetchVotingRecords } from '../Governance/Tools/vote';
 // import { Token } from '@metaplex/js';
 
 
@@ -152,14 +155,36 @@ routes.post('/createGovernance', contentUpload.none(), async(req, res) => {
     }
 });
 
+// governance step4.1.1
+routes.post('/createProposalAndSignOff', contentUpload.none(), async(req, res) => {
+    let { realmPk, ownerPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description, voteOptions, singleOrMultiVote } = req.body;
+
+    try {
+        const response = await createProposalAndSignOff(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description, voteOptions, singleOrMultiVote);
+
+        return res.json({
+            status: 1,
+            data: response.data,
+            details: response.details
+        });
+    } catch(e) {
+        console.log(e);
+        return res.json({
+            status: 0,
+            data: null,
+            details: null
+        });
+    }
+});
+
 // governance step4.1
 routes.post('/createProposal', contentUpload.none(), async(req, res) => {
-    let { realmPk, ownerPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description, voteOptions, proposalIndex } = req.body;
+    let { realmPk, ownerPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description, voteOptions, singleOrMultiVote } = req.body;
 
     try {
         return res.json({
             status: 1,
-            data: await createProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description, voteOptions, proposalIndex),
+            data: await createProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description, voteOptions, singleOrMultiVote),
             details: null
         });
     } catch(e) {
@@ -320,6 +345,25 @@ routes.post('/withdrawGovernanceToken', contentUpload.none(), async(req, res) =>
     }
 });
 
+routes.post('/fetchVotingRecords', contentUpload.none(), async(req, res) => {
+    let { realmPk, proposalPk } = req.body;
+
+    try {
+        return res.json({
+            status: 1,
+            data: await fetchVotingRecords(new PublicKey(realmPk), new PublicKey(proposalPk)),
+            details: null
+        });
+    } catch(e) {
+        console.log(e);
+        return res.json({
+            status: 0,
+            data: null,
+            details: null
+        })
+    }
+});
+
 // governance query
 routes.post('/getRealm', contentUpload.none(), async(req, res) => {
     let { realmPk } = req.body;
@@ -452,3 +496,21 @@ routes.post('/getAllProposals', contentUpload.none(), async(req, res) => {
 });
 
 
+routes.post('/getTokenMeta', contentUpload.none(), async(req, res) => {
+    let { mintPk } = req.body;
+
+    try {
+        return res.json({
+            status: 1,
+            data: await getTokenMeta(mintPk),
+            details: null
+        });
+    } catch(e) {
+        console.log(e);
+        return res.json({
+            status: 0,
+            data: null,
+            details: null
+        })
+    }
+});

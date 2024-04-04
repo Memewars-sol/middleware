@@ -5,7 +5,7 @@ import {
 } from '@solana/web3.js';
 import fs from 'fs-extra';
 import appRootPath from 'app-root-path';
-import { MultiChoiceType, VoteType, getGovernanceProgramVersion, withAddSignatory, withCreateProposal } from '@solana/spl-governance';
+import { MultiChoiceType, VoteType, getGovernanceProgramVersion, withAddSignatory, withCreateProposal, withSignOffProposal } from '@solana/spl-governance';
 import { sendTransaction } from '../Tools/sdk';
 import { connection, programId } from '../Tools/env';
 import { RealmData } from '../types';
@@ -13,7 +13,7 @@ import { getSerializedTransactionInstructions } from '../Tools/serialize';
 import { getAllProposalsData } from './step0_Query';
 import _ from 'lodash';
 
-export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mintPk: PublicKey, tokenOwnerRecordPk: PublicKey, governancePk: PublicKey, governanceAuthorityPk: PublicKey, title: string, description: string, voteOptions: string[] = ['Approve'], useDenyOption: boolean = true, singleOrMultiVote: 'single' | 'multiple' = 'single') => {
+export const createProposalAndSignOff = async(realmPk: PublicKey, ownerPk: PublicKey, mintPk: PublicKey, tokenOwnerRecordPk: PublicKey, governancePk: PublicKey, governanceAuthorityPk: PublicKey, title: string, description: string, voteOptions: string[] = ['Approve'], useDenyOption: boolean = true, singleOrMultiVote: 'single' | 'multiple' = 'single') => {
     const signers: Keypair[] = [];
     const instructions: TransactionInstruction[] = [];
 
@@ -47,6 +47,19 @@ export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mint
         ownerPk, // payer
     );
 
+    withSignOffProposal(
+        instructions,
+        programId,
+        programVersion,
+        realmPk, // realm
+        governancePk, // governance
+        proposalPk, // proposal
+        ownerPk, //signatoryPk
+        undefined, // signer record
+        tokenOwnerRecordPk, // proposal owner record / token owner record
+    );
+
+
     // Add the proposal creator as the default signatory (It is compulsory if you want a complex governance)
     // await withAddSignatory(
     //     instructions,
@@ -62,7 +75,12 @@ export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mint
     // Assuming 'transaction' is a Solana Transaction object fully prepared and possibly signed
     const serializedTransaction = await getSerializedTransactionInstructions(instructions, signers, ownerPk);
 
-    return serializedTransaction;
+    return {
+        data: serializedTransaction,
+        details: {
+            proposalPk: proposalPk.toBase58(),
+        }
+    };
 
     // const tx = await sendTransaction(connection, instructions, signers, owner);
     // console.log(`https://solscan.io/tx/${tx}?cluster=devnet`);

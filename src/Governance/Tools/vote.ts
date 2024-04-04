@@ -28,7 +28,7 @@ export const fetchVotingRecords = async(realmPk: PublicKey, proposalPk: PublicKe
     let yesVotes = 0;
     let noVotes = 0;
     let vetoVotes = 0;
-    let relinquishedVotes = 0;
+    let abstainVotes = 0;
 
     for (const { account } of votingRecords) {
         const { vote, voterWeight, isRelinquished } = account;
@@ -37,7 +37,7 @@ export const fetchVotingRecords = async(realmPk: PublicKey, proposalPk: PublicKe
         const weight = voterWeight ? voterWeight.toNumber() : 0;
 
         if (isRelinquished) {
-            relinquishedVotes += weight;
+            abstainVotes += weight;
         } else if (vote?.deny) {
             noVotes += weight;
         } else if (vote?.veto) {
@@ -51,7 +51,17 @@ export const fetchVotingRecords = async(realmPk: PublicKey, proposalPk: PublicKe
         }
     }
 
-    console.log({ yesVotes, noVotes, vetoVotes, relinquishedVotes, totalWeight: await getTotalWeight(realmPk) });
+    // console.log({ yesVotes, noVotes, vetoVotes, abstainVotes, totalWeight: await getTotalWeight(realmPk) });
+    const totalWeight = await getTotalWeight(realmPk);
+    const turnOut = yesVotes > 0 && noVotes > 0 && totalWeight > 0 ? (yesVotes + noVotes + vetoVotes + abstainVotes) / totalWeight : 0;
+
+    // convert result to percentage
+    yesVotes = yesVotes > 0 && totalWeight > 0 ? yesVotes / totalWeight : 0;
+    noVotes = noVotes > 0 && totalWeight > 0 ? noVotes / totalWeight : 0;
+    vetoVotes = vetoVotes > 0 && totalWeight > 0 ? vetoVotes / totalWeight : 0;
+    abstainVotes = abstainVotes > 0 ? abstainVotes / totalWeight : 0;
+
+    return ({ yesVotes, noVotes, vetoVotes, abstainVotes, totalWeight: totalWeight, turnOut: turnOut });
 }
 
 export const getTotalWeight = async (realmPk: PublicKey) => {
