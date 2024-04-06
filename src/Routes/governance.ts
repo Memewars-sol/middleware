@@ -20,10 +20,33 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, getAssociatedTokenAddres
 import { getTokenMeta } from '../../utils';
 import { createProposalAndSignOff } from '../Governance/Services/step4_1_1_CreateProposalAndSignOff';
 import { fetchVotingRecords } from '../Governance/Tools/vote';
+import { airdropGuildToken } from '../Governance/Services/step0_AirdropGuildToken';
 // import { Token } from '@metaplex/js';
 
 
 export const routes = Router();
+
+// governance step1 (optional)
+routes.post('/mintToken', contentUpload.none(), async(req, res) => {
+    let { mintPk, ownerPk } = req.body;
+
+    try {
+        const result = await airdropGuildToken(new PublicKey(mintPk), new PublicKey(ownerPk));
+
+        return res.json({
+            status: result,
+            data: null,
+            details: null
+        });
+    } catch(e) {
+        console.log(e);
+        return res.json({
+            status: 0,
+            data: null,
+            details: null
+        })
+    }
+});
 
 // governance step1 (optional)
 routes.post('/createToken', contentUpload.none(), async(req, res) => {
@@ -73,7 +96,7 @@ routes.post('/createRealmWithDeposit', contentUpload.none(), async(req, res) => 
     );
 
     try {
-        const response = await createRealmWithDeposit(realmName, ataPk, new PublicKey(ownerPk), new PublicKey(mintPk), Number(amount));
+        const response = await createRealmWithDeposit(realmName, ataPk, new PublicKey(mintPk), new PublicKey(ownerPk), Number(amount));
 
         return res.json({
             status: 1,

@@ -61,7 +61,8 @@ export const fetchVotingRecords = async(realmPk: PublicKey, proposalPk: PublicKe
     vetoVotes = vetoVotes > 0 && totalWeight > 0 ? vetoVotes / totalWeight : 0;
     abstainVotes = abstainVotes > 0 ? abstainVotes / totalWeight : 0;
 
-    return ({ yesVotes, noVotes, vetoVotes, abstainVotes, totalWeight: totalWeight, turnOut: turnOut });
+    // threshold is currently hardcoded (refer step3_1_1)
+    return ({ yesVotes, noVotes, vetoVotes, abstainVotes, totalWeight: totalWeight, turnOut: turnOut, minThreshold: 60 });
 }
 
 export const getTotalWeight = async (realmPk: PublicKey) => {

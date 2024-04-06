@@ -4,7 +4,7 @@ import path from 'path';
 dotenv.config({ path: path.join(__dirname, '.env')});
 import crypto from "crypto";
 import DB from './src/DB';
-import { AccountInfo, Connection, GetProgramAccountsFilter, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction, clusterApiUrl, sendAndConfirmRawTransaction, sendAndConfirmTransaction } from '@solana/web3.js';
+import { AccountInfo, Connection, GetProgramAccountsFilter, Keypair, ParsedAccountData, PublicKey, SystemProgram, Transaction, TransactionInstruction, clusterApiUrl, sendAndConfirmRawTransaction, sendAndConfirmTransaction } from '@solana/web3.js';
 import dayjs, { OpUnitType } from 'dayjs';
 import _ from 'lodash';
 import { loadOrGenerateKeypair, loadPublicKeysFromFile } from './src/Helpers';
@@ -148,6 +148,10 @@ export const getDbConfig = () => {
         port: parseInt(DB_PORT),
         database: DB_NAME,
     };
+}
+
+export const getTokenAuthoritySecret = (): string => {
+    return process.env.GOVERNANCE_GUILD_TOKEN_AUTHORITY!;
 }
 
 export const getRPCEndpoint = (): string => {
@@ -957,4 +961,26 @@ export const getTokenMeta = async (mintAddress: string) => {
     const token = await metaplex.nfts().findByMint({ mintAddress: new PublicKey(mintAddress) });
 
     return token;
+}
+export const getMintAuthority = async(mintPk: string) => {
+    // Connect to cluster
+    const connection = new Connection(getRPCEndpoint());
+
+    // Mint public key
+    let mintPublicKey = new PublicKey(mintPk);
+
+    // Fetch mint account info
+    let mintAccountInfo = await connection.getParsedAccountInfo(mintPublicKey);
+    console.log(JSON.stringify(mintAccountInfo));
+
+    let parsedData = mintAccountInfo?.value?.data as ParsedAccountData;
+
+    let mintAuthority = parsedData.parsed.info.mintAuthority;
+
+    // Get mint authority
+    let mintAuthorityPublicKey = new PublicKey(
+        mintAuthority
+    );
+
+    return mintAuthorityPublicKey;
 }

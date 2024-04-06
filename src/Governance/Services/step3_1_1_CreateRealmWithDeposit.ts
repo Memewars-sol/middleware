@@ -10,6 +10,7 @@ import BN from "bn.js";
 import { sendTransaction } from "../Tools/sdk";
 import { getSerializedTransactionInstructions } from "../Tools/serialize";
 import { getTimestampFromDays } from "../Tools/units";
+import { getMintAuthority } from "../../../utils";
 
 export const createRealmWithDeposit = async (realmName: string, ataPk: PublicKey, mintPk: PublicKey, ownerPk: PublicKey, amount: number, minCommunityTokensToCreateProposal: number = 1000, baseVotingTime: number = 1) => {
     let instructions: TransactionInstruction[] = [];
@@ -92,6 +93,8 @@ export const createRealmWithDeposit = async (realmName: string, ataPk: PublicKey
         depositExemptProposalCount: 0,
     });
 
+    const mintAuthority = await getMintAuthority(mintPk.toBase58());
+
     const governancePk = await withCreateMintGovernance(
         instructions,
         programId, // governance program id
@@ -100,11 +103,10 @@ export const createRealmWithDeposit = async (realmName: string, ataPk: PublicKey
         mintPk, // governance token
         config, // GovernanceConfig
         false, // transferMintAuthorities
-        ownerPk, // mintAuthority
+        mintAuthority, // mintAuthority
         tokenOwnerRecordPk, // tokenOwnerRecord
         ownerPk, // payer
         ownerPk, // governanceAuthority
-        undefined
     );
 
     // Assuming 'transaction' is a Solana Transaction object fully prepared and possibly signed
