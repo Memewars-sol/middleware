@@ -27,7 +27,7 @@ import { airdropGuildToken } from '../Governance/Services/step0_AirdropGuildToke
 export const routes = Router();
 
 // governance step1 (optional)
-routes.post('/mintToken', contentUpload.none(), async(req, res) => {
+routes.post('/airdrop', contentUpload.none(), async(req, res) => {
     let { mintPk, ownerPk } = req.body;
 
     try {
