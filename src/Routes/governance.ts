@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { contentUpload } from './Upload';
-import { getAllGovernanceData, getAllProposalsData, getAllRealms, getGovernanceData, getProposalData, getRealmData, getTokenOwnerData } from '../Governance/Services/step0_Query';
+import { getAllGovernanceData, getAllProposalsData, getAllRealms, getGovernanceData, getProposalData, getRealmData, getTokenForRealm, getTokenOwnerData } from '../Governance/Services/step0_Query';
 import { PublicKey } from '@solana/web3.js';
 import { createMint } from '../Governance/Services/step1_CreateMint';
 import { mintToken } from '../Governance/Services/step2_MintToken';
@@ -443,6 +443,25 @@ routes.post('/getTokenOwnerRecord', contentUpload.none(), async(req, res) => {
     }
 });
 
+routes.post('/getTokenForRealm', contentUpload.none(), async(req, res) => {
+    let { walletPk, realmPk } = req.body;
+
+    try {
+        return res.json({
+            status: 1,
+            data: await getTokenForRealm(new PublicKey(walletPk), new PublicKey(realmPk)) ?? null,
+            details: null
+        });
+    } catch(e) {
+        console.log(e);
+        return res.json({
+            status: 0,
+            data: null,
+            details: null
+        })
+    }
+});
+
 routes.post('/getGovernance', contentUpload.none(), async(req, res) => {
     try {
         let { governancePk } = req.body;
@@ -517,7 +536,6 @@ routes.post('/getAllProposals', contentUpload.none(), async(req, res) => {
         })
     }
 });
-
 
 routes.post('/getTokenMeta', contentUpload.none(), async(req, res) => {
     let { mintPk } = req.body;
