@@ -619,7 +619,7 @@ export default [
                 account_id bigint NOT NULL,
                 associated_token_account text,
                 governance_token_owner_record text,
-                status account_guild_status DEFAULT true,
+                status account_guild_status DEFAULT 'active',
                 created_at timestamp default current_timestamp,
                 updated_at timestamp default current_timestamp
             )
