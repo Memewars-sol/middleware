@@ -1,5 +1,4 @@
 import { Transaction, SystemProgram, Keypair, Connection, PublicKey, sendAndConfirmTransaction, ParsedInstruction } from "@solana/web3.js";
-import { MINT_SIZE, TOKEN_PROGRAM_ID, createInitializeMintInstruction, getMinimumBalanceForRentExemptMint, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createMintToInstruction, createTransferInstruction } from '@solana/spl-token';
 import { DataV2, TokenStandard, createNft, createV1, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { irysStorage, keypairIdentity, Metaplex, UploadMetadataInput } from '@metaplex-foundation/js';
 import { getMetadataUrl, getAdminAccount, getDappDomain, getMetadataBaseUrlForType, getNonPublicKeyPlayerAccount, getPlayerPublicKey, getRPCEndpoint, getTokenAccounts, getTx, sendSOLTo, sleep } from "../../utils";
@@ -23,9 +22,9 @@ const metaplex = Metaplex.make(connection)
     .use(keypairIdentity(account));
 
 /**
- * 
+ *
  * @param wallet Solana Keypair
- * @param tokenMetadata Metaplex Fungible Token Standard object 
+ * @param tokenMetadata Metaplex Fungible Token Standard object
  * @returns Arweave url for our metadata json file
  */
 const uploadMetadata = async (tokenMetadata: UploadMetadataInput): Promise<string> => {
@@ -147,7 +146,7 @@ export const mintCNFTTo = async(destinationWallet: PublicKey, type: CNFTType, me
         collectionMint: convertToUmiPublicKey(collectionMintAddress),
         collectionAuthority: collectionSigner
     }).sendAndConfirm(umi);
-    
+
     let signature = base58.deserialize(res.signature);
 
     // cant get mint address

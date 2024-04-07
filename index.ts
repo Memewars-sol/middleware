@@ -7,6 +7,7 @@ import cors from 'cors';import _ from 'lodash';
 import path from 'path';
 import dotenv from 'dotenv';
 import { routes as apiRoutes } from './src/Routes/api';
+import { routes as governanceRoutes } from './src/Routes/governance';
 import { routes as metadataRoutes } from './src/Routes/metadata';
 import { getServerPort, verifySignature } from './utils';
 import { VERIFY_MESSAGE } from './src/Constants';
@@ -67,6 +68,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/api', apiRoutes);
+app.use('/governance', governanceRoutes);
 app.use('/metadata', metadataRoutes);
 
 //connect app to websocket
@@ -81,7 +83,7 @@ let io = new Server(http, {
 
 //websocket functions
 /* io.on('connection', (socket: Socket) => {
-    
+
 }); */
 
 instrument(io, {
@@ -95,7 +97,7 @@ instrument(io, {
 
 //websocket functions
 /* io.on('connection', (socket: Socket) => {
-    
+
 }); */
 
 //api endpoints

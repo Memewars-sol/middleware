@@ -18,3 +18,4 @@ todo.txt
 *.jpeg
 *.gif
 *.webp
+yarn.lock

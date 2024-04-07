@@ -1,5 +1,4 @@
 import { Transaction, SystemProgram, Keypair, Connection, PublicKey, sendAndConfirmTransaction, ParsedInstruction } from "@solana/web3.js";
-import { MINT_SIZE, TOKEN_PROGRAM_ID, createInitializeMintInstruction, getMinimumBalanceForRentExemptMint, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createMintToInstruction, createTransferInstruction } from '@solana/spl-token';
 import { DataV2, TokenStandard, createV1, mintV1, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { irysStorage, keypairIdentity, Metaplex, UploadMetadataInput } from '@metaplex-foundation/js';
 import { getAdminAccount, getDappDomain, getNonPublicKeyPlayerAccount, getPlayerPublicKey, getRPCEndpoint, getTokenAccounts, getTx, sendSOLTo, sleep } from "../../utils";
@@ -21,9 +20,9 @@ const metaplex = Metaplex.make(connection)
     .use(keypairIdentity(account));
 
 /**
- * 
+ *
  * @param wallet Solana Keypair
- * @param tokenMetadata Metaplex Fungible Token Standard object 
+ * @param tokenMetadata Metaplex Fungible Token Standard object
  * @returns Arweave url for our metadata json file
  */
 const uploadMetadata = async (tokenMetadata: UploadMetadataInput): Promise<string> => {
@@ -76,7 +75,7 @@ export const mintTo = async(destinationWallet: PublicKey, name: string, amount: 
     const umi = createUmi(getRPCEndpoint());
     const tokenAccount = loadOrGenerateKeypair(name);
     const mintAddress = getKeypairMintAddress(name);
-    
+
     const transactionId = await sendSOLTo(true, tokenAccount.publicKey.toBase58(), 0.03);
     console.log(`View SEND SOL (mint) Transaction: https://explorer.solana.com/tx/${transactionId}?cluster=devnet`);
     console.log('sleep 13s');
@@ -158,7 +157,7 @@ export const getUserTokens = async(userAccount: PublicKey) => {
     return mintObject;
 }
 
-/* 
+/*
 // account = non public key account
 export const transferTo = async(account: string, destinationWallet: PublicKey, name: string, decimals: number, amount: number) => {
     const playerKeypair = getNonPublicKeyPlayerAccount(account);
@@ -168,7 +167,7 @@ export const transferTo = async(account: string, destinationWallet: PublicKey, n
     transferToInstruction.recentBlockhash = blockhash;
     transferToInstruction.lastValidBlockHeight = lastValidBlockHeight;
     transferToInstruction.feePayer = playerKeypair.publicKey;
-    const transactionId = await sendAndConfirmTransaction(connection,transferToInstruction,[playerKeypair]); 
+    const transactionId = await sendAndConfirmTransaction(connection,transferToInstruction,[playerKeypair]);
     // console.log(`Completed Transfer: ${amount} ` + whichToken);
     // console.log(`Transaction ID: `, transactionId);
     // console.log(`View Transaction: https://explorer.solana.com/tx/${transactionId}?cluster=devnet`);
