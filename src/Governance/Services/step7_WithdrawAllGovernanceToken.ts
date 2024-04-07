@@ -8,7 +8,7 @@ import { connection, programId } from '../Tools/env';
 import { getSerializedTransactionInstructions } from '../Tools/serialize';
 
 
-export const withdrawGoverningTokens = async (
+export const withdrawAllGoverningTokens = async (
     realmPk: PublicKey,
     ownerPk: PublicKey,
     governingTokenDestination: PublicKey,

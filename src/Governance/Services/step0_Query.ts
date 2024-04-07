@@ -2,7 +2,7 @@ import {
     PublicKey,
 } from '@solana/web3.js';
 import { connection, programId } from '../Tools/env';
-import { getAllGovernances, getAllProposals, getGovernance, getProposal, getRealm, getRealms, getTokenOwnerRecordsByOwner } from '@solana/spl-governance';
+import { ProgramAccount, TokenOwnerRecord, getAllGovernances, getAllProposals, getGovernance, getProposal, getRealm, getRealms, getTokenOwnerRecordsByOwner } from '@solana/spl-governance';
 import _ from 'lodash';
 
 export const getRealmData = async(realmPk: PublicKey) => {
@@ -21,7 +21,7 @@ export const getTokenOwnerData = async(walletPk: PublicKey) => {
     );
 }
 
-export const getTokenForRealm = async(walletPk: PublicKey, realmPk: PublicKey) => {
+export const getTokenRecordForRealm = async(walletPk: PublicKey, realmPk: PublicKey) => {
     const data = await getTokenOwnerRecordsByOwner(
         connection,
         programId,
@@ -36,6 +36,22 @@ export const getTokenForRealm = async(walletPk: PublicKey, realmPk: PublicKey) =
     });
 
     return account;
+}
+
+export const getTokenAmountForRealm = async(walletPk: PublicKey, realmPk: PublicKey) => {
+    const data = await getTokenOwnerRecordsByOwner(
+        connection,
+        programId,
+        walletPk,
+    );
+
+    const account = _.find(data, (item) => {
+        if (item.account && item.account.realm.toBase58() == realmPk.toBase58()) {
+            return item;
+        }
+    });
+
+    return account ? (account as ProgramAccount<TokenOwnerRecord>).account.governingTokenDepositAmount.toNumber() : 0;
 }
 
 

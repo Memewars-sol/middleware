@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { contentUpload } from './Upload';
-import { getAllGovernanceData, getAllProposalsData, getAllRealms, getGovernanceData, getProposalData, getRealmData, getTokenForRealm, getTokenOwnerData } from '../Governance/Services/step0_Query';
+import { getAllGovernanceData, getAllProposalsData, getAllRealms, getGovernanceData, getProposalData, getRealmData, getTokenAmountForRealm, getTokenOwnerData, getTokenRecordForRealm } from '../Governance/Services/step0_Query';
 import { PublicKey } from '@solana/web3.js';
 import { createMint } from '../Governance/Services/step1_CreateMint';
 import { mintToken } from '../Governance/Services/step2_MintToken';
@@ -12,7 +12,7 @@ import { cancelProposal } from '../Governance/Services/step4_4_CancelProposal';
 import { castVote } from '../Governance/Services/step5_1_CastVote';
 import { castVoteForMultiChoice } from '../Governance/Services/step5_2_CastVoteForMultiChoice';
 import { finalizeVote } from '../Governance/Services/step6_FinalizeVote';
-import { withdrawGoverningTokens } from '../Governance/Services/step7_WithdrawGovernanceToken';
+import { withdrawAllGoverningTokens } from '../Governance/Services/step7_WithdrawAllGovernanceToken';
 import { createProposalInstruction } from '../Governance/Services/step4_2_CreateProposalInstructionForMint';
 import { signOffProposal } from '../Governance/Services/step4_3_SignOffProposal';
 import { createRealmWithDeposit } from '../Governance/Services/step3_1_1_CreateRealmWithDeposit';
@@ -21,6 +21,7 @@ import { getTokenMeta } from '../../utils';
 import { createProposalAndSignOff } from '../Governance/Services/step4_1_1_CreateProposalAndSignOff';
 import { fetchVotingRecords } from '../Governance/Tools/vote';
 import { airdropGuildToken } from '../Governance/Services/step0_AirdropGuildToken';
+import { depositAllGovernanceToken } from '../Governance/Services/step3_2_1_DepositAllGovernanceToken';
 // import { Token } from '@metaplex/js';
 
 
@@ -146,6 +147,30 @@ routes.post('/depositGovernanceToken', contentUpload.none(), async(req, res) => 
         return res.json({
             status: 1,
             data: await depositGovernanceToken(new PublicKey(realmPk), ataPk, new PublicKey(ownerPk), new PublicKey(mintPk), Number(amount)),
+            details: null
+        });
+    } catch(e) {
+        console.log(e);
+        return res.json({
+            status: 0,
+            data: null,
+            details: null
+        })
+    }
+});
+
+routes.post('/depositAllGovernanceToken', contentUpload.none(), async(req, res) => {
+    let { realmPk, ownerPk, mintPk } = req.body;
+
+    const ataPk = await getAssociatedTokenAddress(
+        new PublicKey(mintPk),
+        new PublicKey(ownerPk),
+    );
+
+    try {
+        return res.json({
+            status: 1,
+            data: await depositAllGovernanceToken(new PublicKey(realmPk), ataPk, new PublicKey(ownerPk), new PublicKey(mintPk)),
             details: null
         });
     } catch(e) {
@@ -347,7 +372,7 @@ routes.post('/finalizeVote', contentUpload.none(), async(req, res) => {
 });
 
 // governance step 7
-routes.post('/withdrawGovernanceToken', contentUpload.none(), async(req, res) => {
+routes.post('/withdrawAllGovernanceToken', contentUpload.none(), async(req, res) => {
     // governingTokenDestination = ataPk
     // governingTokenMint = mintPk
     let { realmPk, ownerPk, governingTokenDestination, governingTokenMint } = req.body;
@@ -355,7 +380,7 @@ routes.post('/withdrawGovernanceToken', contentUpload.none(), async(req, res) =>
     try {
         return res.json({
             status: 1,
-            data: await withdrawGoverningTokens(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(governingTokenDestination), new PublicKey(governingTokenMint)),
+            data: await withdrawAllGoverningTokens(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(governingTokenDestination), new PublicKey(governingTokenMint)),
             details: null
         });
     } catch(e) {
@@ -443,13 +468,52 @@ routes.post('/getTokenOwnerRecord', contentUpload.none(), async(req, res) => {
     }
 });
 
-routes.post('/getTokenForRealm', contentUpload.none(), async(req, res) => {
+routes.post('/getTokenRecordForRealm', contentUpload.none(), async(req, res) => {
     let { walletPk, realmPk } = req.body;
 
     try {
         return res.json({
             status: 1,
-            data: await getTokenForRealm(new PublicKey(walletPk), new PublicKey(realmPk)) ?? null,
+            data: await getTokenRecordForRealm(new PublicKey(walletPk), new PublicKey(realmPk)) ?? null,
+            details: null
+        });
+    } catch(e) {
+        console.log(e);
+        return res.json({
+            status: 0,
+            data: null,
+            details: null
+        })
+    }
+});
+
+routes.post('/getTokenRecordForRealm', contentUpload.none(), async(req, res) => {
+    let { walletPk, realmPk } = req.body;
+
+    try {
+        return res.json({
+            status: 1,
+            data: await getTokenRecordForRealm(new PublicKey(walletPk), new PublicKey(realmPk)) ?? null,
+            details: null
+        });
+    } catch(e) {
+        console.log(e);
+        return res.json({
+            status: 0,
+            data: null,
+            details: null
+        })
+    }
+});
+
+
+routes.post('/getTokenAmountForRealm', contentUpload.none(), async(req, res) => {
+    let { walletPk, realmPk } = req.body;
+
+    try {
+        return res.json({
+            status: 1,
+            data: await getTokenAmountForRealm(new PublicKey(walletPk), new PublicKey(realmPk)) ?? null,
             details: null
         });
     } catch(e) {
