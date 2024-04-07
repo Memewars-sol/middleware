@@ -651,6 +651,22 @@ export default [
         `,
     },
 
+    {
+        name: "set_default_value_to_guilds_column",
+        query: `
+            ALTER TABLE guilds
+            ALTER COLUMN status SET DEFAULT 'active',
+            ALTER COLUMN created_by SET DEFAULT 1,
+            ALTER COLUMN updated_by SET DEFAULT 1;
+        `,
+        rollback_query: `
+            ALTER TABLE guilds
+            ALTER COLUMN status DROP DEFAULT,
+            ALTER COLUMN created_by DROP DEFAULT,
+            ALTER COLUMN updated_by DROP DEFAULT;
+        `,
+    }
+
 
 
     // payments table, use helius webhook
