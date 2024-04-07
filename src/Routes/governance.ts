@@ -487,26 +487,6 @@ routes.post('/getTokenRecordForRealm', contentUpload.none(), async(req, res) => 
     }
 });
 
-routes.post('/getTokenRecordForRealm', contentUpload.none(), async(req, res) => {
-    let { walletPk, realmPk } = req.body;
-
-    try {
-        return res.json({
-            status: 1,
-            data: await getTokenRecordForRealm(new PublicKey(walletPk), new PublicKey(realmPk)) ?? null,
-            details: null
-        });
-    } catch(e) {
-        console.log(e);
-        return res.json({
-            status: 0,
-            data: null,
-            details: null
-        })
-    }
-});
-
-
 routes.post('/getTokenAmountForRealm', contentUpload.none(), async(req, res) => {
     let { walletPk, realmPk } = req.body;
 
