@@ -53,16 +53,19 @@ export const fetchVotingRecords = async(realmPk: PublicKey, proposalPk: PublicKe
 
     // console.log({ yesVotes, noVotes, vetoVotes, abstainVotes, totalWeight: await getTotalWeight(realmPk) });
     const totalWeight = await getTotalWeight(realmPk);
-    const turnOut = yesVotes > 0 && noVotes > 0 && totalWeight > 0 ? (yesVotes + noVotes + vetoVotes + abstainVotes) / totalWeight : 0;
+    const turnOut = yesVotes + noVotes + vetoVotes + abstainVotes;
+    const turnOutPercent = turnOut > 0 && totalWeight > 0 ? turnOut / totalWeight * 100 : 0;
 
     // convert result to percentage
-    yesVotes = yesVotes > 0 && totalWeight > 0 ? yesVotes / totalWeight : 0;
-    noVotes = noVotes > 0 && totalWeight > 0 ? noVotes / totalWeight : 0;
-    vetoVotes = vetoVotes > 0 && totalWeight > 0 ? vetoVotes / totalWeight : 0;
-    abstainVotes = abstainVotes > 0 ? abstainVotes / totalWeight : 0;
+    const yesVotesPercent = yesVotes > 0 && totalWeight > 0 ? yesVotes / totalWeight * 100 : 0;
+    const noVotesPercent = noVotes > 0 && totalWeight > 0 ? noVotes / totalWeight * 100 : 0;
+    const vetoVotesPercent = vetoVotes > 0 && totalWeight > 0 ? vetoVotes / totalWeight * 100 : 0;
+    const abstainVotesPercent = abstainVotes > 0 && totalWeight > 0 ? abstainVotes / totalWeight : 0;
 
     // threshold is currently hardcoded (refer step3_1_1)
-    return ({ yesVotes, noVotes, vetoVotes, abstainVotes, totalWeight: totalWeight, turnOut: turnOut, minThreshold: 60 });
+    return ({
+        yesVotesPercent, noVotesPercent, vetoVotesPercent, abstainVotesPercent, turnOutPercent, yesVotes, noVotes, vetoVotes, abstainVotes, totalWeight, turnOut, minThreshold: 60
+    });
 }
 
 export const getTotalWeight = async (realmPk: PublicKey) => {
