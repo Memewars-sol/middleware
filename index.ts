@@ -60,7 +60,9 @@ app.use((req, res, next) => {
     }
 
     const { server_key } = req.body;
+    // console.log(`server_key: ${server_key} | process.env.CS_SERVER_KEY: ${process.env.CS_SERVER_KEY}`);
     if(!server_key || server_key !== process.env.CS_SERVER_KEY) {
+        // console.log(req);
         console.log('Unauthorized');
         return res.status(401).send("Unauthorized");
     }
