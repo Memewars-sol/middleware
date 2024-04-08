@@ -619,7 +619,7 @@ export default [
                 account_id bigint NOT NULL,
                 associated_token_account text,
                 governance_token_owner_record text,
-                status account_guild_status DEFAULT 'active',
+                status account_guild_status DEFAULT ,
                 created_at timestamp default current_timestamp,
                 updated_at timestamp default current_timestamp
             )
@@ -665,9 +665,19 @@ export default [
             ALTER COLUMN created_by DROP DEFAULT,
             ALTER COLUMN updated_by DROP DEFAULT;
         `,
+    },
+
+    {
+        name: "set_unique_to_guild_id_and_account_id",
+        query: `
+            ALTER TABLE account_guild
+            ADD CONSTRAINT account_guild_guild_id_account_id_key UNIQUE (guild_id, account_id);
+        `,
+        rollback_query: `
+            ALTER TABLE account_guild
+            DROP CONSTRAINT account_guild_guild_id_account_id_key;
+        `,
     }
-
-
 
     // payments table, use helius webhook
     // {
