@@ -168,10 +168,11 @@ routes.post('/depositAllGovernanceToken', contentUpload.none(), async(req, res) 
     );
 
     try {
+        const response = await depositAllGovernanceToken(new PublicKey(realmPk), ataPk, new PublicKey(ownerPk), new PublicKey(mintPk));
         return res.json({
             status: 1,
-            data: await depositAllGovernanceToken(new PublicKey(realmPk), ataPk, new PublicKey(ownerPk), new PublicKey(mintPk)),
-            details: null
+            data: response.data,
+            details: response.details
         });
     } catch(e) {
         console.log(e);

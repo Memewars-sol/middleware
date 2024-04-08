@@ -22,11 +22,17 @@ export const airdropGuildToken = async(mintPk: PublicKey, recipientPk: PublicKey
         }
     } catch(e) {
         console.log(e);
+        return 0;
     }
 
-    const tx = await sendTokensTo(recipientPk.toBase58(), mintPk.toBase58(), 1, 100, mintAuthority);
+    try {
+        const tx = await sendTokensTo(recipientPk.toBase58(), mintPk.toBase58(), 1, 100, mintAuthority);
 
-    console.log(`Airdropped 100 tokens to ${recipientPk.toBase58()}`);
-    console.log(`https://solscan.io/tx/${tx}?cluster=devnet`);
-    return 1;
+        console.log(`Airdropped 100 tokens to ${recipientPk.toBase58()}`);
+        console.log(`https://solscan.io/tx/${tx}?cluster=devnet`);
+        return 1;
+    } catch(e) {
+        console.log(e);
+        return 0;
+    }
 }
