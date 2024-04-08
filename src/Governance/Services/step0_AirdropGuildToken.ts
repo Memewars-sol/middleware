@@ -25,7 +25,7 @@ export const airdropGuildToken = async(mintPk: PublicKey, ownerPk: PublicKey) =>
         }
 
         // set airdrop amount
-        const airdropAmount = 1000 * (10 ** 9);
+        const airdropAmount = 1000;
 
         // Get account info
         try {

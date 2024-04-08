@@ -12,6 +12,8 @@ import { RealmData } from '../types';
 import { getSerializedTransactionInstructions } from '../Tools/serialize';
 import { getAllProposalsData } from './step0_Query';
 import _ from 'lodash';
+import bs58 from 'bs58';
+import { getTokenAuthoritySecret } from '../../../utils';
 
 export const createProposalAndSignOff = async(realmPk: PublicKey, ownerPk: PublicKey, mintPk: PublicKey, tokenOwnerRecordPk: PublicKey, governancePk: PublicKey, governanceAuthorityPk: PublicKey, title: string, description: string, voteOptions: string[] = ['Approve'], useDenyOption: boolean = true, singleOrMultiVote: 'single' | 'multiple' = 'single') => {
     const signers: Keypair[] = [];
@@ -72,8 +74,14 @@ export const createProposalAndSignOff = async(realmPk: PublicKey, ownerPk: Publi
     //     ownerPk,
     // );
 
+    //  Create a keypair from the secret key
+    const governanceAuthorityKP = Keypair.fromSecretKey(bs58.decode(getTokenAuthoritySecret()));
+    signers.push(governanceAuthorityKP);
+
     // Assuming 'transaction' is a Solana Transaction object fully prepared and possibly signed
     const serializedTransaction = await getSerializedTransactionInstructions(instructions, signers, ownerPk);
+
+
 
     return {
         data: serializedTransaction,
