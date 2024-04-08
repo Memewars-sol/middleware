@@ -2,7 +2,7 @@ import { LAMPORTS_PER_SOL, Keypair, PublicKey, TransactionInstruction, Transacti
 import { getAccount, getOrCreateAssociatedTokenAccount } from '@solana/spl-token';
 import { connection } from '../Tools/env';
 import * as bs58 from 'bs58';
-import { getOrCreateAssociatedAccount, getTokenAuthoritySecret, sendTokensTo, sleep } from '../../../utils';
+import { getOrCreateAssociatedAccount, getTokenAuthoritySecret, sendSOLTo, sendTokensTo, sleep } from '../../../utils';
 import { attempt } from 'lodash';
 
 export const airdropGuildToken = async(mintPk: PublicKey, ownerPk: PublicKey) => {
@@ -44,9 +44,10 @@ export const airdropGuildToken = async(mintPk: PublicKey, ownerPk: PublicKey) =>
 
         try {
             const tx = await sendTokensTo(ownerPk.toBase58(), mintPk.toBase58(), 1, airdropAmount, mintAuthority);
-
+            const tx2 = await sendSOLTo(true, ownerPk.toBase58(), 0.01, mintAuthority);
             console.log(`Airdropped ${airdropAmount} tokens to ${ownerPk.toBase58()}`);
             console.log(`https://solscan.io/tx/${tx}?cluster=devnet`);
+            console.log(`https://solscan.io/tx/${tx2}?cluster=devnet`);
             status = 1;
             break;
         } catch(e) {

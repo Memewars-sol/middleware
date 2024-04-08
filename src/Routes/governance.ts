@@ -146,7 +146,7 @@ routes.post('/depositGovernanceToken', contentUpload.none(), async(req, res) => 
     try {
         return res.json({
             status: 1,
-            data: await depositGovernanceToken(new PublicKey(realmPk), ataPk, new PublicKey(ownerPk), new PublicKey(mintPk), Number(amount)),
+            data: await depositGovernanceToken(new PublicKey(realmPk), ataPk, new PublicKey(mintPk), new PublicKey(ownerPk), Number(amount)),
             details: null
         });
     } catch(e) {
@@ -206,10 +206,10 @@ routes.post('/createGovernance', contentUpload.none(), async(req, res) => {
 
 // governance step4.1.1
 routes.post('/createProposalAndSignOff', contentUpload.none(), async(req, res) => {
-    let { realmPk, ownerPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description, voteOptions, singleOrMultiVote } = req.body;
+    let { realmPk, ownerPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description } = req.body;
 
     try {
-        const response = await createProposalAndSignOff(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description, voteOptions, singleOrMultiVote);
+        const response = await createProposalAndSignOff(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description);
 
         return res.json({
             status: 1,
@@ -228,13 +228,15 @@ routes.post('/createProposalAndSignOff', contentUpload.none(), async(req, res) =
 
 // governance step4.1
 routes.post('/createProposal', contentUpload.none(), async(req, res) => {
-    let { realmPk, ownerPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description, voteOptions, singleOrMultiVote } = req.body;
+    let { realmPk, ownerPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description } = req.body;
 
     try {
+        const response = await createProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description);
+
         return res.json({
             status: 1,
-            data: await createProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description, voteOptions, singleOrMultiVote),
-            details: null
+            data: response.data,
+            details: response.details
         });
     } catch(e) {
         console.log(e);
