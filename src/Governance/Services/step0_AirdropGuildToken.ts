@@ -12,6 +12,9 @@ export const airdropGuildToken = async(mintPk: PublicKey, recipientPk: PublicKey
     // Create a new account to hold the tokens
     const associatedTokenTo = await getOrCreateAssociatedTokenAccount(connection, mintAuthority, mintPk, recipientPk);
 
+    // set airdrop amount
+    const airdropAmount = 1000;
+
     // Get account info
     try {
         const balanceBefore = await getAccount(connection, associatedTokenTo.address);
@@ -26,9 +29,9 @@ export const airdropGuildToken = async(mintPk: PublicKey, recipientPk: PublicKey
     }
 
     try {
-        const tx = await sendTokensTo(recipientPk.toBase58(), mintPk.toBase58(), 1, 100, mintAuthority);
+        const tx = await sendTokensTo(recipientPk.toBase58(), mintPk.toBase58(), 1, airdropAmount, mintAuthority);
 
-        console.log(`Airdropped 100 tokens to ${recipientPk.toBase58()}`);
+        console.log(`Airdropped ${airdropAmount} tokens to ${recipientPk.toBase58()}`);
         console.log(`https://solscan.io/tx/${tx}?cluster=devnet`);
         return 1;
     } catch(e) {
