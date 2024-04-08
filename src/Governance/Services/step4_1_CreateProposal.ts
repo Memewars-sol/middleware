@@ -30,6 +30,14 @@ export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mint
     const voteType = singleOrMultiVote === 'single' ? VoteType.SINGLE_CHOICE : VoteType.MULTI_CHOICE(MultiChoiceType.FullWeight, 1, 10, 1);
 
     const allProposal = await getAllProposalsData(realmPk);
+    let proposalSize = 0;
+
+    _.map(allProposal, (proposal) => {
+        if (!_.isEmpty(proposal)) {
+            proposalSize++;
+        }
+    });
+    console.log(`proposalSize: ${proposalSize}`);
 
     const proposalPk = await withCreateProposal(
         instructions,

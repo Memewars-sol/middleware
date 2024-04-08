@@ -42,7 +42,8 @@ export const depositAllGovernanceToken = async(realmPk: PublicKey, ataPk: Public
         ownerPk, // token owner
         ownerPk, // token source authority
         ownerPk, // payer
-        new BN(amount)
+        new BN(amount),
+        true // governingTokenOwnerIsSigner
     );
 
     // Assuming 'transaction' is a Solana Transaction object fully prepared and possibly signed
