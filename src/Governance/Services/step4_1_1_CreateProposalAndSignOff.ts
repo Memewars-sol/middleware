@@ -81,8 +81,6 @@ export const createProposalAndSignOff = async(realmPk: PublicKey, ownerPk: Publi
     // Assuming 'transaction' is a Solana Transaction object fully prepared and possibly signed
     const serializedTransaction = await getSerializedTransactionInstructions(instructions, signers, ownerPk);
 
-
-
     return {
         data: serializedTransaction,
         details: {

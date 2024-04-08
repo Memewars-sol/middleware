@@ -270,11 +270,11 @@ export const seedGuilds = async() => {
         // ["7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr", "https://popcatsol.com/img/logo.png", "POPCAT"],
         // ["FYa25XnBsXQXAdTnsyKBKd5gZ1VZhChBRF57CqfRxJZX", "https://img.fotofolio.xyz/?url=https%3A%2F%2Fbafybeifx7lchopsihh6qhw5nvq4tjbwl4wf2wy745mugvhdq5krk2bwsmi.ipfs.nftstorage.link", "monkeyhaircut"],
         // ["7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3", "https://img.fotofolio.xyz/?url=https%3A%2F%2Fbafkreih44n5jgqpwuvimsxzroyebjunnm47jttqusb4ivagw3vsidil43y.ipfs.nftstorage.link", "slerf"],
-        ["BSxsCMjAT5udW9sTSxVLVyWw5gChSmB46eocHw1BJSvN", "https://s3.ap-southeast-1.amazonaws.com/asset.cfproxypass.xyz/paws_200x200.gif", "SupePawPatrol", "HNKWuQVZQu1tVsssv4DT6C6V6oYkUharRehoU5NCSL4n", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "AwoXDxN8dYuFSKL6Xun7nVo1YsFEDeAQedxV5vBP6j1m", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active"],
+        ["3ZupsH7D1JhVDzQ5o6u3YQvhA3aSzPUqnMfuY7Ho17Ws", "https://cdn.europosters.eu/image/750/canvas-print-paw-patrol-tracker-i112110.jpg", "SupePawPatrol", "9DepxLYVnKrsGXsFLPKee2kfGZxKbwJxnDM4A4ubc9NM", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "9bLJixTbvvGkQXksmn2iPwQA1QNnzocEKMJVNBEPC5hY", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active"],
 
-        ["FZYNLR9nRp7V894FhS88trS1qxXK2bHnoyjF7uT1JfdE", "https://s3.ap-southeast-1.amazonaws.com/asset.cfproxypass.xyz/wif.jpg", "WIF", "DVxW8eYUSBfmL6eDcge3pNkz17UdkNH4zFC6ef4t6Yj9", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "13Y2Q1sncdnpgqasD3v7iEY7cJwKp9Tud7zga3SoH3zM", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active"],
+        ["7CSWGs1kaDvzRMqtXHbj9oQJAGeywHvFTqQkmZufYQL3", "https://s3.ap-southeast-1.amazonaws.com/asset.cfproxypass.xyz/wif.jpg", "WIF", "AUh9xuJPcteDJEsVVPxtojfy8M8wXdY3DBz9LaHWFxSh", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "3zFDkz1N5Qi3BxP4fR3cMKVYSYK2wmivmf9LVAntc23X", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active"],
 
-        ["PopMaufDi75db4azysjpJoTwfJT4mUoLy8Ns2Njb2Mg", "https://s3.ap-southeast-1.amazonaws.com/asset.cfproxypass.xyz/popcat.png", "POP", "HCQcTbBe75MxCe57v5TKJaJwRX6ATJk7fZbcBcn7h4Vc", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "3D1VWXjRGkieDvrKprTjvc7J2uD88cgrnrfdqGrPdEKs", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active"],
+        ["Bq1K8NiZxZXwiJyRNDTE3EWmh7SHBULirzszoK6euDzc", "https://s3.ap-southeast-1.amazonaws.com/asset.cfproxypass.xyz/popcat.png", "POP", "A34pmejByke3CSDmfYa3sgYvq3ZphEHf8CJWQuXNhtDD", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "7UzbYPNjQjhyWH4YYBZ7BxkZkMTH8BEMBRRHyS9WMS8F", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active"],
     ];
 
     let query = getInsertQuery(columns, guilds, table);
