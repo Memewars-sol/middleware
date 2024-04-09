@@ -677,6 +677,17 @@ export default [
             ALTER TABLE account_guild
             DROP CONSTRAINT account_guild_guild_id_account_id_key;
         `,
+    },
+
+    {
+        name: "add_token_owner_record_to_guild",
+        query: `
+            ALTER TABLE guilds
+            ADD COLUMN token_owner_record text;`,
+        rollback_query: `
+            ALTER TABLE account_guild
+            DROP COLUMN token_owner_record;
+        `,
     }
 
     // payments table, use helius webhook

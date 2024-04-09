@@ -264,17 +264,17 @@ export const seedGuilds = async() => {
         return;
     }
 
-    let columns: string[] = ['mint_address', 'logo', 'name', 'realm_address', 'realm_authority_address', 'governance_address', 'governance_authority_address', 'status'];
+    let columns: string[] = ['mint_address', 'logo', 'name', 'realm_address', 'realm_authority_address', 'governance_address', 'governance_authority_address', 'status', 'token_owner_record'];
 
     let guilds = [
         // ["7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr", "https://popcatsol.com/img/logo.png", "POPCAT"],
         // ["FYa25XnBsXQXAdTnsyKBKd5gZ1VZhChBRF57CqfRxJZX", "https://img.fotofolio.xyz/?url=https%3A%2F%2Fbafybeifx7lchopsihh6qhw5nvq4tjbwl4wf2wy745mugvhdq5krk2bwsmi.ipfs.nftstorage.link", "monkeyhaircut"],
         // ["7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3", "https://img.fotofolio.xyz/?url=https%3A%2F%2Fbafkreih44n5jgqpwuvimsxzroyebjunnm47jttqusb4ivagw3vsidil43y.ipfs.nftstorage.link", "slerf"],
-        ["3ZupsH7D1JhVDzQ5o6u3YQvhA3aSzPUqnMfuY7Ho17Ws", "https://cdn.europosters.eu/image/750/canvas-print-paw-patrol-tracker-i112110.jpg", "SupePawPatrol", "9DepxLYVnKrsGXsFLPKee2kfGZxKbwJxnDM4A4ubc9NM", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "9bLJixTbvvGkQXksmn2iPwQA1QNnzocEKMJVNBEPC5hY", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active"],
+        ["3ZupsH7D1JhVDzQ5o6u3YQvhA3aSzPUqnMfuY7Ho17Ws", "https://cdn.europosters.eu/image/750/canvas-print-paw-patrol-tracker-i112110.jpg", "SupePawPatrol", "9DepxLYVnKrsGXsFLPKee2kfGZxKbwJxnDM4A4ubc9NM", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "9bLJixTbvvGkQXksmn2iPwQA1QNnzocEKMJVNBEPC5hY", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active", "Cp5FcriPTiex67gE4hh4mzLA8bFJU1aBn4bxqdJbGhEL"],
 
-        ["7CSWGs1kaDvzRMqtXHbj9oQJAGeywHvFTqQkmZufYQL3", "https://s3.ap-southeast-1.amazonaws.com/asset.cfproxypass.xyz/wif.jpg", "WIF", "AUh9xuJPcteDJEsVVPxtojfy8M8wXdY3DBz9LaHWFxSh", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "3zFDkz1N5Qi3BxP4fR3cMKVYSYK2wmivmf9LVAntc23X", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active"],
+        ["7CSWGs1kaDvzRMqtXHbj9oQJAGeywHvFTqQkmZufYQL3", "https://s3.ap-southeast-1.amazonaws.com/asset.cfproxypass.xyz/wif.jpg", "WIF", "AUh9xuJPcteDJEsVVPxtojfy8M8wXdY3DBz9LaHWFxSh", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "3zFDkz1N5Qi3BxP4fR3cMKVYSYK2wmivmf9LVAntc23X", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active", "Aq674TYnyrHGHfVi5TEFVWVCCJ5W2WJwv7dosHYcVehA"],
 
-        ["Bq1K8NiZxZXwiJyRNDTE3EWmh7SHBULirzszoK6euDzc", "https://s3.ap-southeast-1.amazonaws.com/asset.cfproxypass.xyz/popcat.png", "POP", "A34pmejByke3CSDmfYa3sgYvq3ZphEHf8CJWQuXNhtDD", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "7UzbYPNjQjhyWH4YYBZ7BxkZkMTH8BEMBRRHyS9WMS8F", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active"],
+        ["Bq1K8NiZxZXwiJyRNDTE3EWmh7SHBULirzszoK6euDzc", "https://s3.ap-southeast-1.amazonaws.com/asset.cfproxypass.xyz/popcat.png", "POP", "A34pmejByke3CSDmfYa3sgYvq3ZphEHf8CJWQuXNhtDD", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "7UzbYPNjQjhyWH4YYBZ7BxkZkMTH8BEMBRRHyS9WMS8F", "AndySjsCdmQbQE1GLhN35635ZEWDwVkzBC82q4e1Af4p", "active", "EeCu6KwGh7Fy8rLJVBHECtC7GJHyQCy4v7Pic3KWUXik"],
     ];
 
     let query = getInsertQuery(columns, guilds, table);

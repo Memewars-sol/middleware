@@ -228,10 +228,11 @@ routes.post('/createProposalAndSignOff', contentUpload.none(), async(req, res) =
 
 // governance step4.1
 routes.post('/createProposal', contentUpload.none(), async(req, res) => {
-    let { realmPk, ownerPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description } = req.body;
+    let { realmPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description } = req.body;
 
     try {
-        const response = await createProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description);
+        console.log({ realmPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description });
+        const response = await createProposal(new PublicKey(realmPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description);
 
         return res.json({
             status: 1,
@@ -270,12 +271,12 @@ routes.post('/createProposalInstruction', contentUpload.none(), async(req, res) 
 
 // governance step 4.3
 routes.post('/signOffProposal', contentUpload.none(), async(req, res) => {
-    let { realmPk, ownerPk, tokenOwnerRecordPk, governancePk, proposalPk, signatoryPk } = req.body;
+    let { realmPk, tokenOwnerRecordPk, governancePk, proposalPk } = req.body;
 
     try {
         return res.json({
             status: 1,
-            data: await signOffProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk), new PublicKey(signatoryPk)),
+            data: await signOffProposal(new PublicKey(realmPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk)),
             details: null
         });
     } catch(e) {
@@ -314,13 +315,15 @@ routes.post('/cancelProposal', contentUpload.none(), async(req, res) => {
 
 // governance step 5.1
 routes.post('/castVoteForSingleChoice', contentUpload.none(), async(req, res) => {
-    let { realmPk, ownerPk, tokenOwnerRecordPk, governancePk, proposalPk, voteYesOrNo, voteVeto } = req.body;
+    let { realmPk, ownerPk, mintPk, tokenOwnerRecordPk, voterOwnerRecordPk, governancePk, governanceAuthorityPk, proposalPk, voteYesOrNo, voteVeto } = req.body;
 
     try {
+        const response = await castVote(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(voterOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), new PublicKey(proposalPk), voteYesOrNo, voteVeto);
+
         return res.json({
             status: 1,
-            data: await castVote(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk), voteYesOrNo, voteVeto),
-            details: null
+            data: response.data,
+            details: response.details
         });
     } catch(e) {
         console.log(e);

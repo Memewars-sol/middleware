@@ -15,7 +15,7 @@ import _ from 'lodash';
 import { getTokenAuthoritySecret } from '../../../utils';
 import bs58 from 'bs58';
 
-export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mintPk: PublicKey, tokenOwnerRecordPk: PublicKey, governancePk: PublicKey, governanceAuthorityPk: PublicKey, title: string, description: string, voteOptions: string[] = ['Approve'], useDenyOption: boolean = true, singleOrMultiVote: 'single' | 'multiple' = 'single') => {
+export const createProposal = async(realmPk: PublicKey, mintPk: PublicKey, tokenOwnerRecordPk: PublicKey, governancePk: PublicKey, governanceAuthorityPk: PublicKey, title: string, description: string, voteOptions: string[] = ['Approve'], useDenyOption: boolean = true, singleOrMultiVote: 'single' | 'multiple' = 'single') => {
     const signers: Keypair[] = [];
     const instructions: TransactionInstruction[] = [];
 
@@ -24,6 +24,10 @@ export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mint
         connection,
         programId
     );
+
+    //  realm / governance owner
+    const governanceAuthorityKP = Keypair.fromSecretKey(bs58.decode(getTokenAuthoritySecret()));
+    // signers.push(governanceAuthorityKP);
 
     // Create single choice Approve/Deny proposal with instruction to mint more governance tokens
     // Create multi-choice proposal
@@ -54,7 +58,7 @@ export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mint
         voteType, // single / multiple
         voteOptions,
         useDenyOption,
-        ownerPk, // payer
+        governanceAuthorityKP.publicKey, // payer
     );
 
     // Add the proposal creator as the default signatory (It is compulsory if you want a complex governance)
@@ -69,12 +73,8 @@ export const createProposal = async(realmPk: PublicKey, ownerPk: PublicKey, mint
     //     ownerPk,
     // );
 
-    //  Create a keypair from the secret key
-    const governanceAuthorityKP = Keypair.fromSecretKey(bs58.decode(getTokenAuthoritySecret()));
-    signers.push(governanceAuthorityKP);
-
     // Assuming 'transaction' is a Solana Transaction object fully prepared and possibly signed
-    const serializedTransaction = await getSerializedTransactionInstructions(instructions, signers, ownerPk);
+    const serializedTransaction = await getSerializedTransactionInstructions(instructions, signers, governanceAuthorityKP.publicKey, true, governanceAuthorityKP);
 
     return {
         data: serializedTransaction,
