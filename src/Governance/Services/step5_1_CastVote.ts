@@ -45,7 +45,7 @@ export const castVote = async(realmPk: PublicKey, ownerPk: PublicKey, mintPk: Pu
         proposalPk, // proposal
         tokenOwnerRecordPk, // Proposal owner TokenOwnerRecord
         voterOwnerRecordPk, // Voter TokenOwnerRecord
-        governanceAuthorityPk, // Voter wallet or delegate
+        ownerPk, // Voter wallet or delegate
         mintPk,
         vote,
         ownerPk, // payer
