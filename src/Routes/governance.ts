@@ -22,6 +22,7 @@ import { createProposalAndSignOff } from '../Governance/Services/step4_1_1_Creat
 import { fetchVotingRecords } from '../Governance/Tools/vote';
 import { airdropGuildToken } from '../Governance/Services/step0_AirdropGuildToken';
 import { depositAllGovernanceToken } from '../Governance/Services/step3_2_1_DepositAllGovernanceToken';
+import { SignatoryRecord } from '@solana/spl-governance';
 // import { Token } from '@metaplex/js';
 
 
@@ -228,11 +229,11 @@ routes.post('/createProposalAndSignOff', contentUpload.none(), async(req, res) =
 
 // governance step4.1
 routes.post('/createProposal', contentUpload.none(), async(req, res) => {
-    let { realmPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description } = req.body;
+    let { realmPk, ownerPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description } = req.body;
 
     try {
-        console.log({ realmPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, title, description });
-        const response = await createProposal(new PublicKey(realmPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description);
+        // console.log({ realmPk, ownerPk, mintPk, tokenOwnerRecordPk, governancePk, title, description });
+        const response = await createProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), title, description);
 
         return res.json({
             status: 1,
@@ -251,12 +252,12 @@ routes.post('/createProposal', contentUpload.none(), async(req, res) => {
 
 // governance step 4.2 (optional) - the return data is unserialized at the moment
 routes.post('/createProposalInstruction', contentUpload.none(), async(req, res) => {
-    let { ownerPk, mintPk, tokenOwnerRecordPk, governancePk, governanceAuthorityPk, ataPk, proposalPk, mintAuthorityPk, mintAmount } = req.body;
+    let { ownerPk, mintPk, tokenOwnerRecordPk, governancePk, ataPk, proposalPk, mintAuthorityPk, mintAmount } = req.body;
 
     try {
         return res.json({
             status: 1,
-            data: await createProposalInstruction(new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(governanceAuthorityPk), new PublicKey(ataPk), new PublicKey(proposalPk), new PublicKey(mintAuthorityPk), mintAmount),
+            data: await createProposalInstruction(new PublicKey(ownerPk), new PublicKey(mintPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(ataPk), new PublicKey(proposalPk), new PublicKey(mintAuthorityPk), mintAmount),
             details: null
         });
     } catch(e) {
@@ -271,12 +272,13 @@ routes.post('/createProposalInstruction', contentUpload.none(), async(req, res) 
 
 // governance step 4.3
 routes.post('/signOffProposal', contentUpload.none(), async(req, res) => {
-    let { realmPk, tokenOwnerRecordPk, governancePk, proposalPk } = req.body;
+    let { realmPk, ownerPk, tokenOwnerRecordPk, governancePk, proposalPk, signatoryRecordPk } = req.body;
 
     try {
         return res.json({
             status: 1,
-            data: await signOffProposal(new PublicKey(realmPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk)),
+            // data: await signOffProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk), new PublicKey(signatoryRecordPk)),
+            data: await signOffProposal(new PublicKey(realmPk), new PublicKey(ownerPk), new PublicKey(tokenOwnerRecordPk), new PublicKey(governancePk), new PublicKey(proposalPk)),
             details: null
         });
     } catch(e) {

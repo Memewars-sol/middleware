@@ -30,6 +30,10 @@ export async function getSerializedTransactionInstructions(
         transaction.partialSign(...signers);
     }
 
+    if (!transaction) {
+        throw new Error('Transaction is not undefined');
+    }
+
     if (!sendTx) {
         // Serialize the transaction without signing
         const serializedTransaction = transaction.serialize({ requireAllSignatures: false });

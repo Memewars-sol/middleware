@@ -25,8 +25,8 @@ export const castVote = async(realmPk: PublicKey, ownerPk: PublicKey, mintPk: Pu
     let vote = voteYesOrNo ? Vote.fromYesNoVote(YesNoVote.Yes) : Vote.fromYesNoVote(YesNoVote.No);
 
     //  realm / governance owner
-    const governanceAuthorityKP = Keypair.fromSecretKey(bs58.decode(getTokenAuthoritySecret()));
-    signers.push(governanceAuthorityKP);
+    // const governanceAuthorityKP = Keypair.fromSecretKey(bs58.decode(getTokenAuthoritySecret()));
+    // signers.push(governanceAuthorityKP);
 
     // veto will override normal vote
     vote = voteVeto ? new Vote({

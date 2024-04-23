@@ -6,7 +6,7 @@ import { getOrCreateAssociatedAccount, getTokenAuthoritySecret, sendSOLTo, sendT
 import { attempt } from 'lodash';
 
 export const airdropGuildToken = async(mintPk: PublicKey, ownerPk: PublicKey) => {
-    let attempts = 3;
+    let attempts = 5;
     let status = 0;
     do {
         attempts--;
@@ -20,12 +20,14 @@ export const airdropGuildToken = async(mintPk: PublicKey, ownerPk: PublicKey) =>
             associatedTokenTo = await getOrCreateAssociatedTokenAccount(connection, mintAuthority, mintPk, ownerPk);
         } catch(e) {
             status = 0;
+            console.log(`getOrCreateAssociatedTokenAccount`);
             console.log(e);
             continue;
         }
 
         // set airdrop amount
-        const airdropAmount = 1000;
+        // const airdropAmount = 1000;
+        const airdropAmount = 1_000;
 
         // Get account info
         try {
@@ -38,13 +40,15 @@ export const airdropGuildToken = async(mintPk: PublicKey, ownerPk: PublicKey) =>
             }
         } catch(e) {
             status = 0;
+            console.log(`getAccount`);
             console.log(e);
             continue;
         }
 
+        // 1,000,000,000
         try {
             const tx = await sendTokensTo(ownerPk.toBase58(), mintPk.toBase58(), 1, airdropAmount, mintAuthority);
-            const tx2 = await sendSOLTo(true, ownerPk.toBase58(), 0.01, mintAuthority);
+            const tx2 = await sendSOLTo(true, ownerPk.toBase58(), 0.2, mintAuthority);
             console.log(`Airdropped ${airdropAmount} tokens to ${ownerPk.toBase58()}`);
             console.log(`https://solscan.io/tx/${tx}?cluster=devnet`);
             console.log(`https://solscan.io/tx/${tx2}?cluster=devnet`);
@@ -52,6 +56,7 @@ export const airdropGuildToken = async(mintPk: PublicKey, ownerPk: PublicKey) =>
             break;
         } catch(e) {
             status = 0;
+            console.log(`sendTokensTo`);
             console.log(e);
             continue;
         }

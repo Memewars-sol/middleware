@@ -10,7 +10,7 @@ import { getSerializedTransactionInstructions } from '../Tools/serialize';
 import bs58 from 'bs58';
 import { getTokenAuthoritySecret } from '../../../utils';
 
-export const signOffProposal = async(realmPk: PublicKey, tokenOwnerRecordPk: PublicKey, governancePk: PublicKey, proposalPk: PublicKey, proposalInstructions: TransactionInstruction[] = []) => {
+export const signOffProposal = async(realmPk: PublicKey, ownerPk: PublicKey, tokenOwnerRecordPk: PublicKey, governancePk: PublicKey, proposalPk: PublicKey, signatoryRecordPk: PublicKey | undefined = undefined, proposalInstructions: TransactionInstruction[] = []) => {
     const signers: Keypair[] = [];
     let instructions: TransactionInstruction[] = [];
 
@@ -24,8 +24,9 @@ export const signOffProposal = async(realmPk: PublicKey, tokenOwnerRecordPk: Pub
     );
 
     //  realm / governance owner
-    const governanceAuthorityKP = Keypair.fromSecretKey(bs58.decode(getTokenAuthoritySecret()));
-    const signatoryPk = governanceAuthorityKP.publicKey;
+    // const governanceAuthorityKP = Keypair.fromSecretKey(bs58.decode(getTokenAuthoritySecret()));
+    // const signatoryPk = governanceAuthorityKP.publicKey;
+    const signatoryPk = ownerPk;
     // signers.push(governanceAuthorityKP);
 
     withSignOffProposal(
@@ -36,12 +37,12 @@ export const signOffProposal = async(realmPk: PublicKey, tokenOwnerRecordPk: Pub
         governancePk, // governance
         proposalPk, // proposal
         signatoryPk, //signer
-        undefined, // signer record
+        signatoryRecordPk, // signer record
         tokenOwnerRecordPk, // proposal owner record / token owner record
     );
 
     // Assuming 'transaction' is a Solana Transaction object fully prepared and possibly signed
-    const serializedTransaction = await getSerializedTransactionInstructions(instructions, signers, governanceAuthorityKP.publicKey, true, governanceAuthorityKP);
+    const serializedTransaction = await getSerializedTransactionInstructions(instructions, signers, ownerPk);
 
     return serializedTransaction;
 
