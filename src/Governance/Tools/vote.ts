@@ -1,70 +1,85 @@
 import {
     PublicKey
 } from '@solana/web3.js';
-import { getGovernanceAccounts, VoteRecord, MemcmpFilter, TokenOwnerRecord } from '@solana/spl-governance';
+import { getGovernanceAccounts, VoteRecord, MemcmpFilter, TokenOwnerRecord, getProposal, getGovernance, getRealm, Proposal } from '@solana/spl-governance';
 import { connection, programId } from './env';
+import BN from 'bn.js';
+import { formatDuration } from './units';
+import dayjs from 'dayjs';
 
 export const fetchVotingRecords = async(realmPk: PublicKey, proposalPk: PublicKey) => {
-    const proposalPubkeyBytes = Buffer.from(proposalPk.toBytes()); // Convert PublicKey to Buffer
+    const proposal = await getProposal(connection, proposalPk);
+    const governance = await getGovernance(connection, proposal.account.governance);
+    const realm = await getRealm(connection, governance.account.realm);
 
-    const filters: MemcmpFilter[] = [new MemcmpFilter(
-        1,
-        proposalPubkeyBytes
-    )];
+    const votingStartUnix = proposal.account.votingAt?.toNumber() ?? 0;
+    const votingDurationRaw = governance.account.config.baseVotingTime;
 
-    const votingRecords = await getGovernanceAccounts<VoteRecord>(
-        connection,
-        programId, // Your governance program ID
-        // Specify the type of account you are fetching, e.g., VotingRecord
-        VoteRecord,
-        filters
-    );
+    const votingStartAtRaw = dayjs.unix(votingStartUnix);
+    const votingStartAt = votingStartAtRaw.format('YYYY-MM-DD HH:mm:ss');
+    const votingDuration = formatDuration(votingDurationRaw);
+    // console.log(`votingAt: ${votingAt}`);
+    // console.log(`votingDuration: ${votingDuration}`);
 
-    // console.log(JSON.stringify(votingRecords));
+    const votingEndAtRaw = votingStartAtRaw.add(votingDurationRaw, 'seconds');
+    const votingEndUnix = votingEndAtRaw.unix();
+    const now = dayjs();
+    const votingEndAt = votingEndAtRaw.format('YYYY-MM-DD HH:mm:ss');
+    let votingDurationLeft = 'Ended';
 
-
-    // return votingRecords;
-
-    let yesVotes = 0;
-    let noVotes = 0;
-    let vetoVotes = 0;
-    let abstainVotes = 0;
-
-    for (const { account } of votingRecords) {
-        const { vote, voterWeight, isRelinquished } = account;
-
-        // Convert voterWeight to a number, assuming it's a BN (big number)
-        const weight = voterWeight ? voterWeight.toNumber() : 0;
-
-        if (isRelinquished) {
-            abstainVotes += weight;
-        } else if (vote?.deny) {
-            noVotes += weight;
-        } else if (vote?.veto) {
-            vetoVotes += weight;
-        } else if (vote?.approveChoices) {
-            // This assumes approveChoices is an array and a vote is considered 'yes' if any choice is approved
-            const approved = vote?.approveChoices.some(choice => choice); // Check if any choice is approved
-            if (approved) {
-                yesVotes += weight;
-            }
-        }
+    if (now.isAfter(votingEndAtRaw)) {
+        // console.log('Voting period has ended.');
+    } else {
+        const durationLeft = votingEndAtRaw.diff(now, 'seconds');
+        const formattedDurationLeft = formatDuration(durationLeft);
+        votingDurationLeft = formattedDurationLeft;
+        // console.log(`Voting ends in: ${formattedDurationLeft}`);
     }
 
-    // console.log({ yesVotes, noVotes, vetoVotes, abstainVotes, totalWeight: await getTotalWeight(realmPk) });
-    const totalWeight = await getTotalWeight(realmPk);
-    const turnOut = yesVotes + noVotes + vetoVotes + abstainVotes;
-    const turnOutPercent = turnOut > 0 && totalWeight > 0 ? turnOut / totalWeight * 100 : 0;
+    const votingDurationDiff = now.diff(votingStartAtRaw, 'seconds');
+    const votingTimelapsed = votingDurationDiff > votingDurationRaw ? 1 : (votingDurationDiff / votingDurationRaw);
+    console.log(`votingTimelapsed: ${votingTimelapsed}`);
 
-    // convert result to percentage
-    const yesVotesPercent = yesVotes > 0 && totalWeight > 0 ? yesVotes / totalWeight * 100 : 0;
-    const noVotesPercent = noVotes > 0 && totalWeight > 0 ? noVotes / totalWeight * 100 : 0;
-    const vetoVotesPercent = vetoVotes > 0 && totalWeight > 0 ? vetoVotes / totalWeight * 100 : 0;
-    const abstainVotesPercent = abstainVotes > 0 && totalWeight > 0 ? abstainVotes / totalWeight : 0;
+    // if proposal config == deposited tokens use this params
+    // console.log(`realm.account.config.communityMintMaxVoteWeightSource.value: ${realm.account.config.communityMintMaxVoteWeightSource.value}`);
+    const totalWeight = realm.account.config.communityMintMaxVoteWeightSource.value.toString();
+    // console.log(`totalWeight: ${totalWeight}`);
 
-    // threshold is currently hardcoded (refer step3_1_1)
+    // else use token full supply
+    // const tokenSupplyInfo = await connection.getTokenSupply(realm.account.communityMint);
+    // const totalWeight = tokenSupplyInfo.value.amount;
+    // console.log(`totalWeight: ${totalWeight.toString()}`);
+
+    // min threshold
+    const minThreshold = governance.account.config.communityVoteThreshold.value;
+    // console.log(`Min Threshold: ${minThreshold}`);
+
+    // yes vote
+    const yesVotes = proposal.account.getYesVoteCount().toString();
+    const yesVotesPercent = calculatePct(new BN(yesVotes), new BN(totalWeight));
+    // console.log(`yesVotes: ${yesVotes.toString()}`);
+    // console.log(`yesVotePct: ${yesVotesPercent}`);
+
+    // no vote
+    const noVotes = proposal.account.getNoVoteCount().toString();
+    const noVotesPercent = calculatePct(new BN(noVotes), new BN(totalWeight));
+    // console.log(`noVotes: ${noVotes.toString()}`);
+    // console.log(`noVotePct: ${noVotesPercent}`);
+
+    // turnout
+    const turnOut = new BN(yesVotes).add(new BN(noVotes)).toString();
+    const turnOutPercent = calculatePct(new BN(turnOut), new BN(totalWeight));
+    // console.log(`turnOut: ${turnOut.toString()}`);
+    // console.log(`turnOutPct: ${turnOutPercent}`);
+
+    // optional
+    const vetoVotesPercent = 0;
+    const abstainVotesPercent = 0;
+    const vetoVotes = '0';
+    const abstainVotes = '0';
+
     return ({
-        yesVotesPercent, noVotesPercent, vetoVotesPercent, abstainVotesPercent, turnOutPercent, yesVotes, noVotes, vetoVotes, abstainVotes, totalWeight, turnOut, minThreshold: 60
+        yesVotesPercent, noVotesPercent, vetoVotesPercent, abstainVotesPercent, turnOutPercent, yesVotes, noVotes, vetoVotes, abstainVotes, totalWeight, turnOut, minThreshold, votingStartAt, votingEndAt, votingTimelapsed, votingDuration, votingDurationLeft, votingStartUnix, votingEndUnix
     });
 }
 
@@ -94,4 +109,15 @@ export const getTotalWeight = async (realmPk: PublicKey) => {
     }
 
     return totalWeight;
+}
+
+export const calculatePct = (c = new BN(0), total?: BN) => {
+    if (total?.isZero()) {
+      return 0
+    }
+
+    return new BN(100)
+      .mul(c)
+      .div(total ?? new BN(1))
+      .toNumber()
 }

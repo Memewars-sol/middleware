@@ -688,6 +688,17 @@ export default [
             ALTER TABLE account_guild
             DROP COLUMN token_owner_record;
         `,
+    },
+
+    {
+        name: "add_signatory_record_to_forum_posts",
+        query: `
+            ALTER TABLE forum_posts
+            ADD COLUMN signatory_record text;`,
+        rollback_query: `
+            ALTER TABLE account_guild
+            DROP COLUMN signatory_record;
+        `,
     }
 
     // payments table, use helius webhook
