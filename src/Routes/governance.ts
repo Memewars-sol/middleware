@@ -405,6 +405,10 @@ routes.post('/fetchVotingRecords', contentUpload.none(), async(req, res) => {
     let { realmPk, proposalPk } = req.body;
 
     try {
+        if (!realmPk || !proposalPk) {
+            throw new Error('realmPk and proposalPk are required');
+        }
+
         return res.json({
             status: 1,
             data: await fetchVotingRecords(new PublicKey(realmPk), new PublicKey(proposalPk)),
